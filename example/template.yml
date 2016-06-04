@@ -1,0 +1,80 @@
+swagger: '2.0'
+info:
+  version: '1.0'
+  title: "{{ apiGateway['name'] }}"
+  description: |
+    Test Swagger for Yoke
+produces:
+  - application/json
+schemes:
+  - https
+paths:
+  /hello:
+    get:
+      summary: Returns a greeting
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: User ID Not Found
+        500:
+          description: API fault
+        503:
+          description: Service Unavailable
+      x-amazon-apigateway-integration:
+        type: "aws"
+        uri: "arn:aws:apigateway:{{ region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ region }}:{{ accountId }}:function:{{ Lambda['config']['name'] }}:{{ stage }}/invocations"
+        credentials: "arn:aws:iam::{{ accountId }}:role/{{ apiGateway['role'] }}"
+        httpMethod: "POST"
+        requestTemplates:
+          application/json: >
+            {
+              "operation": "hello",
+              "parameters": {
+                "gateway": {
+                  "stage" : "$context.stage",
+                  "request-id" : "$context.requestId",
+                  "resource-path" : "$context.resourcePath",
+                  "http-method" : "$context.httpMethod"
+                },
+                "requestor": {
+                  "source-ip" : "$context.identity.sourceIp",
+                  "user-agent" : "$context.identity.userAgent",
+                  "account-id" : "$context.identity.accountId",
+                  "api-key" : "$context.identity.apiKey",
+                  "caller" : "$context.identity.caller",
+                  "user" : "$context.identity.user",
+                  "user-arn" : "$context.identity.userArn"
+                },
+                "request": {
+                  "body": $input.json('$')
+                }
+              }
+            }
+        responses:
+          '.*500: Internal Server Error.*':
+            statusCode: '500'
+            responseTemplates:
+              'application/json':
+                "{\"error\": {\"code\": 500, \"message\": $input.json('$.errorMessage')}}"
+          '.*400: Bad Request.*':
+            statusCode: '400'
+            responseTemplates:
+              'application/json':
+                "{\"error\": {\"code\": 400, \"message\": $input.json('$.errorMessage')}}"
+          '.*401: Unauthorized.*':
+            statusCode: '401'
+            responseTemplates:
+              'application/json':
+                "{\"error\": {\"code\": 401, \"message\": $input.json('$.errorMessage')}}"
+          '.*404: Not Found.*':
+            statusCode: '404'
+            responseTemplates:
+              'application/json':
+                "{\"error\": {\"code\": 404, \"message\": $input.json('$.errorMessage')}}"
+          default:
+            statusCode: '200'

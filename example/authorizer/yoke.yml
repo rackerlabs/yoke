@@ -1,0 +1,15 @@
+Lambda:
+  config:
+    name: yokeHelloWorldAuth
+    description: Hello World with Yoke Authorizer
+    handler: "handler.lambda_handler"
+    timeout: 300
+    memory: 256
+    ignore: ["/*.pyc"]
+    role: lambda_basic_execution
+  path: './src'
+stages:
+  dev:
+    region: us-east-1
+    config:
+      expected_token: 0f992609befd546c6edf518d718630160dd3289c
