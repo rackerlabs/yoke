@@ -12,9 +12,10 @@ LAMBDA_ROLE_ARN_TEMPLATE = "arn:aws:iam::{account_id}:role/{role}"
 
 class YokeConfig(object):
 
-    def __init__(self, project_dir, stage):
+    def __init__(self, project_dir, stage, env_dict):
         self.project_dir = project_dir
         self.stage = stage
+        self.env_dict = env_dict
 
     def get_config(self):
         LOG.warning("Getting config from %s ...", self.project_dir)
@@ -36,6 +37,9 @@ class YokeConfig(object):
         if config['stages'][self.stage].get('secret_config'):
             dec_config = utils.decrypt(config)
             config['stages'][self.stage]['config'].update(dec_config)
+
+        if self.env_dict:
+            config['stages'][self.stage]['config'].update(self.env_dict)
 
         # Set proper Lambda ARN for role
         config['Lambda']['config']['role'] = LAMBDA_ROLE_ARN_TEMPLATE.format(

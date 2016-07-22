@@ -41,6 +41,10 @@ def main(arv=None):
     deploy_parser = subparsers.add_parser('deploy')
     deploy_parser.add_argument('--stage', dest='stage', help='Stage to deploy',
                                default=os.getenv('YOKE_STAGE'))
+    deploy_parser.add_argument('--environment', dest='environment',
+                               help=('Extra config values for lambda'
+                                     'environment. Format: KEYNAME=VALUE',),
+                               default=[], action='append')
     deploy_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
                                help='Project directory containing yoke.yml')
     deploy_parser.set_defaults(func=deploy_app)
@@ -71,7 +75,8 @@ def main(arv=None):
 
     try:
         args.project_dir = os.path.abspath(args.project_dir)
-        _cfg = config.YokeConfig(args.project_dir, args.stage)
+        env_dict = utils.format_env(args.environment)
+        _cfg = config.YokeConfig(args.project_dir, args.stage, env_dict)
         args.config = _cfg.get_config()
         args.func(args)
     except Exception:

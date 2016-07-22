@@ -29,3 +29,14 @@ def encrypt(config, output=False):
         print('Encrypted config for stage {}:\n\n{}'.format(
               config['stage'],
               base64.b64encode(resp['CiphertextBlob'])))
+
+
+def format_env(env_list):
+    env_dict = {}
+    for env_item in env_list:
+        # A value might contain an '=' so let's not clobber that.
+        parts = env_item.split('=')
+        key = parts.pop(0)
+        value = '='.join(parts)
+        env_dict[key] = value
+    return env_dict
