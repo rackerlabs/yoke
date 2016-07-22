@@ -8,6 +8,8 @@ Lambda:
     ignore: ["/*.pyc"]
     role: lambda_basic_execution
   path: './src'
+  extraFiles:
+    - './lib/'
 apiGateway:
   name: yokeHelloWorld
   swaggerTemplate: template.yml
