@@ -41,7 +41,7 @@ def main(arv=None):
     deploy_parser = subparsers.add_parser('deploy')
     deploy_parser.add_argument('--stage', dest='stage', help='Stage to deploy',
                                default=os.getenv('YOKE_STAGE'))
-    deploy_parser.add_argument('--environment', dest='environment',
+    deploy_parser.add_argument('--environment', '-e', dest='environment',
                                help=('Extra config values for lambda'
                                      'environment. Format: KEYNAME=VALUE',),
                                default=[], action='append')
