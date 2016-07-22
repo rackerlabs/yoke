@@ -29,6 +29,9 @@ class YokeConfig(object):
         # Set provided stage's config to default configs
         if stage == 'default':
             config['stages'][self.stage] = config['stages'][stage]
+            # If you don't have a default config, initialize it.
+            if not config['stages'][self.stage].get('config'):
+                config['stages'][stage]['config'] = {}
             stage = self.stage
         config['stage'] = self.stage
 
@@ -69,7 +72,9 @@ class YokeConfig(object):
         try:
             aws_account_id = boto3.client('iam').get_user()[
                 'User']['Arn'].split(':')[4]
-        except ClientError:
+        except ClientError as exc:
+            print("Failed to get account via get_user()...")
+            print(str(exc))
             aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
                 'Users'][0]['Arn'].split(':')[4]
 
