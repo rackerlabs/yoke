@@ -1,4 +1,5 @@
 import boto3
+from botocore.exceptions import ClientError
 from collections import namedtuple, OrderedDict
 from jinja2 import Environment, FileSystemLoader
 from lambda_uploader import package, uploader
@@ -130,8 +131,13 @@ class Deployment(object):
 
     def verify_account_id(self):
         LOG.warning('Verifying AWS Account Credentials ...')
-        aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
-            'Users'][0]['Arn'].split(':')[4]
+
+        try:
+            aws_account_id = boto3.client('iam').get_user()[
+                'User']['Arn'].split(':')[4]
+        except ClientError:
+            aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
+                'Users'][0]['Arn'].split(':')[4]
         try:
             assert aws_account_id == self.account_id
         except Exception:

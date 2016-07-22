@@ -1,4 +1,5 @@
 import boto3
+from botocore.exceptions import ClientError
 import json
 import logging
 import os
@@ -65,6 +66,11 @@ class YokeConfig(object):
 
     def get_account_id(self):
         LOG.warning('Getting AWS Account Credentials ...')
-        aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
-            'Users'][0]['Arn'].split(':')[4]
+        try:
+            aws_account_id = boto3.client('iam').get_user()[
+                'User']['Arn'].split(':')[4]
+        except ClientError:
+            aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
+                'Users'][0]['Arn'].split(':')[4]
+
         return str(aws_account_id)
