@@ -22,15 +22,14 @@ class Deployment(object):
         self.lambda_path = os.path.join(self.project_dir,
                                         self.config['Lambda']['path'])
         self.account_id = config['account_id']
-        self.extra_files = config['Lambda'].get('extraFiles', [])
+        self.extra_files = self.normalize_extra_files(config['Lambda'])
         # Let's make sure the accounts match up
         self.verify_account_id()
 
     def build_lambda_package(self):
         LOG.warning("Building Lambda package ...")
-        extra_files = self.extra_files
         pkg = package.build_package(self.lambda_path, None,
-                                    extra_files=extra_files)
+                                    extra_files=self.extra_files)
         pkg.clean_workspace()
         return pkg
 
@@ -76,6 +75,13 @@ class Deployment(object):
                                                     self.region,
                                                     self.stage))
         return deployment
+
+    def normalize_extra_files(self, lambda_config):
+        normalized = []
+        extra_files = lambda_config.get('extraFiles', [])
+        for extra_file in extra_files:
+            normalized.append(os.path.join(self.project_dir, extra_file))
+        return normalized
 
     def render_swagger(self):
         LOG.warning("Templating swagger.yml for region %s ...", self.region)
