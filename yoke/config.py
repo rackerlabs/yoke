@@ -4,6 +4,8 @@ import logging
 import os
 import ruamel.yaml as yaml
 
+import utils
+
 LOG = logging.getLogger(__name__)
 LAMBDA_ROLE_ARN_TEMPLATE = "arn:aws:iam::{account_id}:role/{role}"
 
@@ -28,16 +30,21 @@ class YokeConfig(object):
             stage = self.stage
         config['stage'] = self.stage
 
-        LOG.info('Config:\n%s', json.dumps(config, indent=4))
-
         config['project_dir'] = self.project_dir
         config['account_id'] = self.get_account_id()
+
+        if config['stages'][self.stage].get('secret_config'):
+            dec_config = utils.decrypt(config)
+            config['stages'][self.stage]['config'].update(dec_config)
 
         # Set proper Lambda ARN for role
         config['Lambda']['config']['role'] = LAMBDA_ROLE_ARN_TEMPLATE.format(
             account_id=config['account_id'],
             role=config['Lambda']['config']['role']
         )
+
+        LOG.info('Config:\n%s', json.dumps(config, indent=4))
+
         return config
 
     def get_stage(self, stage, config):

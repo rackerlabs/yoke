@@ -24,7 +24,6 @@ stages:
       message: "Hi from DEV!"
   dev:
     <<: *DEFAULT
-    keyName: "yokeTest"
     config:
       message: "Hi from Dev!"
       apiKey: 739045723jkfo23457859
@@ -36,7 +35,8 @@ stages:
   staging:
     <<: *DEFAULT
     keyName: yokeTest
-    config: CiCCM/++OaG61j7Ld8RPAE32b1LZBas6Or1EVAwZxdThARLnAQEBAgB4gjP/vjmhutY+y3fETwBN9m9S2QWrOjq9RFQMGcXU4QEAAAC+MIG7BgkqhkiG9w0BBwagga0wgaoCAQAwgaQGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMJesOjJpuXDNgIfyKAgEQgHd7N0goSpc013D8CuSwaVqVWawgp9PJ6F/TkKKGFQVmL7PT+x72EknOFXNUriorHLBX/FBvopkRZLqxRTxRyW9T/Lwm1lXZjHuNF/JGNLr9+F9W8uNTREHf7ZjhfxHMmBG06oBtIWnwa0E8hPZ+XMy7TpzUu/DMXA==
+    keyRegion: us-east-1
+    secret_config: CiCCM/++OaG61j7Ld8RPAE32b1LZBas6Or1EVAwZxdThARLnAQEBAgB4gjP/vjmhutY+y3fETwBN9m9S2QWrOjq9RFQMGcXU4QEAAAC+MIG7BgkqhkiG9w0BBwagga0wgaoCAQAwgaQGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMJesOjJpuXDNgIfyKAgEQgHd7N0goSpc013D8CuSwaVqVWawgp9PJ6F/TkKKGFQVmL7PT+x72EknOFXNUriorHLBX/FBvopkRZLqxRTxRyW9T/Lwm1lXZjHuNF/JGNLr9+F9W8uNTREHf7ZjhfxHMmBG06oBtIWnwa0E8hPZ+XMy7TpzUu/DMXA==
   prod:
     <<: *DEFAULT
     config:

@@ -1,27 +1,17 @@
 import argparse
-import base64
-import boto3
-import json
 import logging
 import os
 import sys
-import ruamel.yaml as yaml
 
 import config
 import deploy
+import utils
 
 LOG = logging.getLogger(__name__)
 
 
 def decrypt(args):
-    stage = args.stage
-    stage_cfg = base64.b64decode(args.config['stages'][stage]['config'])
-    region = args.config['stages'][stage]['region']
-    kms = boto3.client('kms', region_name=region)
-    resp = kms.decrypt(CiphertextBlob=bytes(stage_cfg))
-    print('Decrypted config for stage {}:\n\n{}'.format(
-        stage,
-        yaml.round_trip_dump(json.loads(resp['Plaintext']))))
+    utils.decrypt(args.config, output=True)
 
 
 def deploy_app(args):
@@ -33,14 +23,7 @@ def deploy_app(args):
 
 
 def encrypt(args):
-    stage = args.config['stages'][args.stage]
-    kms = boto3.client('kms', region_name=stage['region'])
-    key_name = 'alias/{}'.format(stage['keyName'])
-    resp = kms.encrypt(KeyId=key_name,
-                       Plaintext=bytes(json.dumps(stage['config'])))
-    print('Encrypted config for stage {}:\n\n{}'.format(
-          args.stage,
-          base64.b64encode(resp['CiphertextBlob'])))
+    utils.encrypt(args.config, output=True)
 
 
 def main(arv=None):
@@ -64,7 +47,7 @@ def main(arv=None):
 
     decrypt_parser = subparsers.add_parser('decrypt')
     decrypt_parser.add_argument('--stage', dest='stage',
-                                help='Stage to deploy',
+                                help='Stage to decrypt',
                                 default=os.getenv('YOKE_STAGE'))
     decrypt_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
                                 help='Project directory containing yoke.yml')
@@ -72,7 +55,7 @@ def main(arv=None):
 
     encrypt_parser = subparsers.add_parser('encrypt')
     encrypt_parser.add_argument('--stage', dest='stage',
-                                help='Stage to deploy',
+                                help='Stage to encrypt',
                                 default=os.getenv('YOKE_STAGE'))
     encrypt_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
                                 help='Project directory containing yoke.yml')
