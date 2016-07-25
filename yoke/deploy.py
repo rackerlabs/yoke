@@ -115,13 +115,16 @@ class Deployment(object):
         with open(swagger_file, 'r') as import_file:
             upload_body = import_file.read()
 
+        parameters = { 'basepath': 'prepend' }
         if api:
             LOG.warning("API %s already exists - updating ...", api['name'])
-            api = client.put_rest_api(restApiId=api['id'], body=upload_body)
+            api = client.put_rest_api(restApiId=api['id'], body=upload_body,
+                                      parameters=parameters)
         else:
             LOG.warning("API %s not found, importing ...",
                         self.config['apiGateway']['name'])
-            api = client.import_rest_api(body=upload_body)
+            api = client.import_rest_api(body=upload_body,
+                                         parameters=parameters)
 
         return api
 
