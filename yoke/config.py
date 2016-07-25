@@ -3,6 +3,7 @@ from botocore.exceptions import ClientError
 import json
 import logging
 import os
+import re
 import ruamel.yaml as yaml
 
 import utils
@@ -21,8 +22,11 @@ class YokeConfig(object):
     def get_config(self):
         LOG.warning("Getting config from %s ...", self.project_dir)
         yoke_path = os.path.join(self.project_dir, 'yoke.yml')
+
+        # Read config file lines as list in order to template.
         with open(yoke_path, 'r') as config_file:
-            raw = config_file.read()
+            raw = config_file.readlines()
+        raw = self.render_config(raw)
         config = yaml.load(raw)
         stage = self.get_stage(self.stage, config)
 
@@ -79,3 +83,19 @@ class YokeConfig(object):
                 'Users'][0]['Arn'].split(':')[4]
 
         return str(aws_account_id)
+
+    def render_config(self, config):
+        vars = self.env_dict
+        vars['stage'] = self.stage
+        rendered = []
+        p = re.compile(".*?\{\{ (.*?) \}\}.*?")
+        for line in config:
+            match = p.findall(line)
+            for var in match:
+                replace_var = self.env_dict[var]
+                line = line.replace("{{{{ {} }}}}".format(var),
+                                    replace_var, 1)
+            rendered.append(line)
+        LOG.warning("Rendered config:\n{}".format(rendered))
+        print(rendered)
+        return ''.join(rendered)
