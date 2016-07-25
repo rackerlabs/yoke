@@ -8,8 +8,8 @@ setup(
     packages=find_packages(exclude=['tests']),
     test_suite='tests',
     install_requires=[
-        'boto3==1.3.0',
-        'botocore==1.4.24',
+        'boto3>=1.3.0',
+        'botocore>=1.4.24',
         'docutils==0.12',
         'futures==3.0.5',
         'Jinja2==2.8',
