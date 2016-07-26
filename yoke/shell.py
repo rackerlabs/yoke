@@ -75,7 +75,10 @@ def main(arv=None):
 
     try:
         args.project_dir = os.path.abspath(args.project_dir)
-        env_dict = utils.format_env(args.environment)
+        if hasattr(args, 'environment'):
+            env_dict = utils.format_env(args.environment)
+        else:
+            env_dict = {}
         _cfg = config.YokeConfig(args.project_dir, args.stage, env_dict)
         args.config = _cfg.get_config()
         args.func(args)
