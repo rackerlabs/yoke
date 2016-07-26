@@ -96,6 +96,6 @@ class YokeConfig(object):
                 line = line.replace("{{{{ {} }}}}".format(var),
                                     replace_var, 1)
             rendered.append(line)
-        LOG.warning("Rendered config:\n{}".format(rendered))
+        LOG.debug("Rendered config:\n{}".format(rendered))
         print(rendered)
         return ''.join(rendered)
