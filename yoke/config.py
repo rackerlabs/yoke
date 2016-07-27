@@ -97,5 +97,4 @@ class YokeConfig(object):
                                     replace_var, 1)
             rendered.append(line)
         LOG.debug("Rendered config:\n{}".format(rendered))
-        print(rendered)
         return ''.join(rendered)
