@@ -1,11 +1,15 @@
+import logging
+import json
+import os
+
 import boto3
 from botocore.exceptions import ClientError
 from collections import namedtuple, OrderedDict
 from jinja2 import Environment, FileSystemLoader
 from lambda_uploader import package, uploader
-import logging
-import json
-import os
+from retrying import retry
+
+import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -57,6 +61,9 @@ class Deployment(object):
         # Upload lambda
         self.upload_lambda(pkg, upldr_config)
 
+    @retry(retry_on_exception=utils.retry_if_api_limit,
+           wait_exponential_multiplier=5000, wait_exponential_max=25000,
+           stop_max_attempt_number=10)
     def deploy_api(self):
 
         # Template swagger.yml from template

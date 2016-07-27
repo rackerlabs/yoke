@@ -18,6 +18,7 @@ setup(
         'MarkupSafe==0.23',
         'python-dateutil==2.5.3',
         'PyYAML==3.11',
+        'retrying==1.3.3',
         'ruamel.ordereddict==0.4.9',
         'ruamel.yaml==0.11.11',
         'six==1.10.0',

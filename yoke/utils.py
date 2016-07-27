@@ -1,8 +1,11 @@
 import base64
 import json
+import logging
 
 import boto3
 import ruamel.yaml as yaml
+
+LOG = logging.getLogger(__name__)
 
 
 def decrypt(config, output=False):
@@ -40,3 +43,10 @@ def format_env(env_list):
         value = '='.join(parts)
         env_dict[key] = value
     return env_dict
+
+
+def retry_if_api_limit(exception):
+    if 'TooManyRequestsException' in str(exception):
+        LOG.warning('Hit API Gateway rate limit - retrying ...')
+        return True
+    return False
