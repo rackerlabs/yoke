@@ -18,18 +18,9 @@ class YokeConfig(object):
         self.project_dir = project_dir
         self.stage = stage
         self.env_dict = env_dict
+        self.yoke_path = os.path.join(self.project_dir, 'yoke.yml')
 
-    def get_config(self):
-        LOG.warning("Getting config from %s ...", self.project_dir)
-        yoke_path = os.path.join(self.project_dir, 'yoke.yml')
-
-        # Read config file lines as list in order to template.
-        with open(yoke_path, 'r') as config_file:
-            raw = config_file.readlines()
-        raw = self.render_config(raw)
-        config = yaml.load(raw)
-        stage = self.get_stage(self.stage, config)
-
+    def check_default_stage(self, config, stage):
         # Set provided stage's config to default configs
         if stage == 'default':
             config['stages'][self.stage] = config['stages'][stage]
@@ -38,11 +29,18 @@ class YokeConfig(object):
                 config['stages'][stage]['config'] = {}
             stage = self.stage
         config['stage'] = self.stage
+        return config
+
+    def get_config(self):
+        config = self.load_config_file()
+        stage = self.get_stage(self.stage, config)
+        config = self.check_default_stage(config, stage)
 
         config['project_dir'] = self.project_dir
         config['account_id'] = self.get_account_id()
 
-        if config['stages'][self.stage].get('secret_config'):
+        if config['stages'][self.stage].get('secret_config') or \
+          config['stages'][self.stage].get('secretConfig'):
             dec_config = utils.decrypt(config)
             config['stages'][self.stage]['config'].update(dec_config)
 
@@ -83,6 +81,14 @@ class YokeConfig(object):
                 'Users'][0]['Arn'].split(':')[4]
 
         return str(aws_account_id)
+
+    def load_config_file(self):
+        # Read config file lines as list in order to template.
+        LOG.warning("Getting config from %s ...", self.project_dir)
+        with open(self.yoke_path, 'r') as config_file:
+            raw = config_file.readlines()
+        raw = self.render_config(raw)
+        return yaml.load(raw)
 
     def render_config(self, config):
         vars = self.env_dict

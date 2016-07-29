@@ -10,7 +10,13 @@ LOG = logging.getLogger(__name__)
 
 def decrypt(config, output=False):
     stage = config['stage']
-    stage_cfg = base64.b64decode(config['stages'][stage]['secret_config'])
+
+    enc_config = get_secret_config(config, stage)
+    if not isinstance(enc_config, basestring):
+        raise Exception('Secret config for stage {} is not a '
+                        'string! Did you forget to encrypt '
+                        'first?'.format(stage))
+    stage_cfg = base64.b64decode(enc_config)
     region = config['stages'][stage]['keyRegion']
     kms = boto3.client('kms', region_name=region)
     resp = kms.decrypt(CiphertextBlob=bytes(stage_cfg))
@@ -24,14 +30,15 @@ def decrypt(config, output=False):
 
 def encrypt(config, output=False):
     stage = config['stages'][config['stage']]
+    secret_config = get_secret_config(config, stage)
     kms = boto3.client('kms', region_name=stage['keyRegion'])
     key_name = 'alias/{}'.format(stage['keyName'])
     resp = kms.encrypt(KeyId=key_name,
-                       Plaintext=bytes(json.dumps(stage['config'])))
+                       Plaintext=bytes(json.dumps(secret_config)))
     if output:
         print('Encrypted config for stage {}:\n\n{}'.format(
-              config['stage'],
-              base64.b64encode(resp['CiphertextBlob'])))
+            config['stage'],
+            base64.b64encode(resp['CiphertextBlob'])))
 
 
 def format_env(env_list):
@@ -43,6 +50,19 @@ def format_env(env_list):
         value = '='.join(parts)
         env_dict[key] = value
     return env_dict
+
+
+def get_secret_config(config, stage):
+    old_style = config['stages'][stage].get('secret_config')
+    if old_style:
+        LOG.warning('{} stage is using "secret_config" - please update to'
+                    ' "secretConfig". This will break in the '
+                    'future!'.format(stage))
+    new_style = config['stages'][stage].get('secretConfig')
+    if old_style and new_style:
+        raise Exception('Please use only one of '
+                        '"secretConfig" or "secret_config!"')
+    return old_style if old_style else new_style
 
 
 def retry_if_api_limit(exception):
