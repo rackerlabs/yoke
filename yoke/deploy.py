@@ -109,6 +109,7 @@ class Deployment(object):
         LOG.warning("Templating swagger.yml for region %s ...", self.region)
         swagger_file = self.config['apiGateway'].get('swaggerTemplate',
                                                      'template.yml')
+        swagger_file = os.path.join(self.project_dir, swagger_file)
         templated = self.apply_templates(swagger_file)
         j2_env = Environment(loader=DictLoader(
             {'template': json.dumps(templated)}))
