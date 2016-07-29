@@ -10,6 +10,17 @@ import utils
 LOG = logging.getLogger(__name__)
 
 
+def build(args):
+    LOG.warning('Building deployment only ...')
+    deployment = deploy.Deployment(args.config)
+    deployment.write_lambda_json()
+    deployment.write_lambda_config()
+    if args.config.get('apiGateway'):
+        template = deployment.render_swagger()
+        swagger_file = deployment.write_template(template)
+        LOG.warning('API Gateway Swagger file written to {}'.format(
+                    swagger_file))
+
 def decrypt(args):
     utils.decrypt(args.config, output=True)
 
@@ -38,7 +49,8 @@ def main(arv=None):
                         action='store_const', const=logging.DEBUG)
     parser.set_defaults(loglevel=logging.WARNING)
 
-    deploy_parser = subparsers.add_parser('deploy')
+    deploy_parser = subparsers.add_parser('deploy',
+        help='Deploy lambda and (optionally) API Gateway.')
     deploy_parser.add_argument('--stage', dest='stage', help='Stage to deploy',
                                default=os.getenv('YOKE_STAGE'))
     deploy_parser.add_argument('--environment', '-e', dest='environment',
@@ -48,6 +60,18 @@ def main(arv=None):
     deploy_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
                                help='Project directory containing yoke.yml')
     deploy_parser.set_defaults(func=deploy_app)
+
+    deploy_parser = subparsers.add_parser('build',
+        help='Only template config files and build lambda package.')
+    deploy_parser.add_argument('--stage', dest='stage', help='Stage to build',
+                               default=os.getenv('YOKE_STAGE'))
+    deploy_parser.add_argument('--environment', '-e', dest='environment',
+                               help=('Extra config values for lambda'
+                                     'environment. Format: KEYNAME=VALUE',),
+                               default=[], action='append')
+    deploy_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
+                               help='Project directory containing yoke.yml')
+    deploy_parser.set_defaults(func=build)
 
     decrypt_parser = subparsers.add_parser('decrypt')
     decrypt_parser.add_argument('--stage', dest='stage',
