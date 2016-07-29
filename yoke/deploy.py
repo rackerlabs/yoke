@@ -1,14 +1,17 @@
 import logging
 import json
 import os
+import re
 
 import boto3
 from botocore.exceptions import ClientError
 from collections import namedtuple, OrderedDict
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, DictLoader
 from lambda_uploader import package, uploader
 from retrying import retry
+import ruamel.yaml as yaml
 
+import templates
 import utils
 
 LOG = logging.getLogger(__name__)
@@ -29,6 +32,18 @@ class Deployment(object):
         self.extra_files = self.normalize_extra_files(config['Lambda'])
         # Let's make sure the accounts match up
         self.verify_account_id()
+
+    def apply_templates(self, template):
+        aws_int = 'x-amazon-apigateway-integration'
+        with open(template) as input_file:
+            swagger = yaml.load(input_file.read())
+        paths = swagger.get('paths')
+        for path, methods in paths.items():
+            for method, _config in methods.items():
+                if _config.get('x-yoke-integration'):
+                    swagger['paths'][path][method][aws_int] = self.template_aws_integration(
+                        _config['x-yoke-integration'])
+        return swagger
 
     def build_lambda_package(self):
         LOG.warning("Building Lambda package ...")
@@ -94,16 +109,36 @@ class Deployment(object):
         LOG.warning("Templating swagger.yml for region %s ...", self.region)
         swagger_file = self.config['apiGateway'].get('swaggerTemplate',
                                                      'template.yml')
-        j2_env = Environment(loader=FileSystemLoader(self.project_dir),
-                             trim_blocks=True, lstrip_blocks=True)
-        rendered_template = j2_env.get_template(swagger_file).render(
+        templated = self.apply_templates(swagger_file)
+        j2_env = Environment(loader=DictLoader(
+            {'template': json.dumps(templated)}))
+        j2_template = j2_env.get_template('template')
+        rendered_template = j2_template.render(
             accountId=self.account_id,
             Lambda=self.config['Lambda'],
             apiGateway=self.config['apiGateway'],
             region=self.region,
             stage=self.stage
         )
-        return rendered_template
+        return json.loads(rendered_template)
+
+    def template_aws_integration(self, yoke_integration):
+        integ = templates.AWS_INTEGRATION
+        integ['requestTemplates'] = templates.DEFAULT_REQUESTS
+        integ['requestTemplates']['application/json'] = self.template_operation(
+            integ['requestTemplates']['application/json'],
+            yoke_integration.get('operation'),
+        )
+        integ['responses'] = templates.DEFAULT_RESPONSES
+        return integ
+
+    def template_operation(self, template, operation):
+        p = re.compile(".*?\{\{ (.*?) \}\}.*?")
+        match = p.findall(template)
+        for var in match:
+            template = template.replace("{{{{ {} }}}}".format(var),
+                                        operation, 1)
+        return template
 
     def upload_api(self, swagger_file):
         LOG.warning("Uploading API to AWS Account %s for region %s ...",
@@ -178,7 +213,7 @@ class Deployment(object):
     def write_template(self, output):
         swagger_file = os.path.join(self.project_dir, 'swagger.yml')
         with open(swagger_file, 'w') as fh:
-            fh.write(output)
+            fh.write(yaml.round_trip_dump(output))
         return swagger_file
 
     def _format_vpc_config(self):
