@@ -1,3 +1,5 @@
+from collections import namedtuple, OrderedDict
+import copy
 import logging
 import json
 import os
@@ -5,8 +7,8 @@ import re
 
 import boto3
 from botocore.exceptions import ClientError
-from collections import namedtuple, OrderedDict
 from jinja2 import Environment, DictLoader
+import jsonref
 from lambda_uploader import package, uploader
 from retrying import retry
 import ruamel.yaml as yaml
@@ -111,6 +113,7 @@ class Deployment(object):
                                                      'template.yml')
         swagger_file = os.path.join(self.project_dir, swagger_file)
         templated = self.apply_templates(swagger_file)
+
         j2_env = Environment(loader=DictLoader(
             {'template': json.dumps(templated)}))
         j2_template = j2_env.get_template('template')
@@ -156,7 +159,19 @@ class Deployment(object):
                 api = item
                 break
         with open(swagger_file, 'r') as import_file:
-            upload_body = import_file.read()
+            raw_body = import_file.read()
+
+        # AWS doesn't quite have Swagger 2.0 validation right and will fail
+        # on some refs. So, we need to convert to deref before
+        # upload.
+
+        dict_body = yaml.load(raw_body)
+
+        # We have to make a deepcopy here to create a proper JSON
+        # compatible object, otherwise `json.dumps` fails when it
+        # hits jsonref.JsonRef objects.
+        deref_body = copy.deepcopy(jsonref.JsonRef.replace_refs(dict_body))
+        upload_body = json.dumps(deref_body)
 
         parameters = { 'basepath': 'prepend' }
         if api:

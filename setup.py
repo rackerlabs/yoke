@@ -14,6 +14,7 @@ setup(
         'futures==3.0.5',
         'Jinja2==2.8',
         'jmespath==0.9.0',
+        'jsonref==0.1',
         'lambda-uploader==1.0.0',
         'MarkupSafe==0.23',
         'python-dateutil==2.5.3',
