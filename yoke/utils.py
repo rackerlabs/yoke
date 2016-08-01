@@ -30,7 +30,7 @@ def decrypt(config, output=False):
 
 def encrypt(config, output=False):
     stage = config['stages'][config['stage']]
-    secret_config = get_secret_config(config, stage)
+    secret_config = get_secret_config(config, config['stage'])
     kms = boto3.client('kms', region_name=stage['keyRegion'])
     key_name = 'alias/{}'.format(stage['keyName'])
     resp = kms.encrypt(KeyId=key_name,

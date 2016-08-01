@@ -14,7 +14,8 @@ LAMBDA_ROLE_ARN_TEMPLATE = "arn:aws:iam::{account_id}:role/{role}"
 
 class YokeConfig(object):
 
-    def __init__(self, project_dir, stage, env_dict):
+    def __init__(self, shellargs, project_dir, stage, env_dict):
+        self._args = shellargs
         self.project_dir = project_dir
         self.stage = stage
         self.env_dict = env_dict
@@ -39,10 +40,11 @@ class YokeConfig(object):
         config['project_dir'] = self.project_dir
         config['account_id'] = self.get_account_id()
 
-        if config['stages'][self.stage].get('secret_config') or \
-          config['stages'][self.stage].get('secretConfig'):
-            dec_config = utils.decrypt(config)
-            config['stages'][self.stage]['config'].update(dec_config)
+        if not self._args.func.func_name in ['encrypt', 'decrypt']:
+            if config['stages'][self.stage].get('secret_config') or \
+              config['stages'][self.stage].get('secretConfig'):
+                dec_config = utils.decrypt(config)
+                config['stages'][self.stage]['config'].update(dec_config)
 
         if self.env_dict:
             config['stages'][self.stage]['config'].update(self.env_dict)
