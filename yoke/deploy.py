@@ -127,13 +127,13 @@ class Deployment(object):
         return json.loads(rendered_template)
 
     def template_aws_integration(self, yoke_integration):
-        integ = templates.AWS_INTEGRATION
-        integ['requestTemplates'] = templates.DEFAULT_REQUESTS
+        integ = copy.deepcopy(templates.AWS_INTEGRATION)
+        integ['requestTemplates'] = copy.deepcopy(templates.DEFAULT_REQUESTS)
         integ['requestTemplates']['application/json'] = self.template_operation(
             integ['requestTemplates']['application/json'],
             yoke_integration.get('operation'),
         )
-        integ['responses'] = templates.DEFAULT_RESPONSES
+        integ['responses'] = copy.deepcopy(templates.DEFAULT_RESPONSES)
         return integ
 
     def template_operation(self, template, operation):
