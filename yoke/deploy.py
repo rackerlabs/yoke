@@ -7,7 +7,7 @@ import re
 
 import boto3
 from botocore.exceptions import ClientError
-from jinja2 import Environment, DictLoader
+from jinja2 import Environment, DictLoader, FileSystemLoader
 import jsonref
 from lambda_uploader import package, uploader
 from retrying import retry
@@ -37,15 +37,13 @@ class Deployment(object):
 
     def apply_templates(self, template):
         aws_int = 'x-amazon-apigateway-integration'
-        with open(template) as input_file:
-            swagger = yaml.load(input_file.read())
-        paths = swagger.get('paths')
+        paths = template.get('paths')
         for path, methods in paths.items():
             for method, _config in methods.items():
                 if _config.get('x-yoke-integration'):
-                    swagger['paths'][path][method][aws_int] = self.template_aws_integration(
+                    template['paths'][path][method][aws_int] = self.template_aws_integration(
                         _config['x-yoke-integration'])
-        return swagger
+        return template
 
     def build_lambda_package(self):
         LOG.warning("Building Lambda package ...")
@@ -111,20 +109,31 @@ class Deployment(object):
         LOG.warning("Templating swagger.yml for region %s ...", self.region)
         swagger_file = self.config['apiGateway'].get('swaggerTemplate',
                                                      'template.yml')
-        swagger_file = os.path.join(self.project_dir, swagger_file)
-        templated = self.apply_templates(swagger_file)
-
-        j2_env = Environment(loader=DictLoader(
-            {'template': json.dumps(templated)}))
-        j2_template = j2_env.get_template('template')
-        rendered_template = j2_template.render(
+        j2_env = Environment(loader=FileSystemLoader(self.project_dir),
+                             trim_blocks=True, lstrip_blocks=True)
+        first_template = yaml.load(j2_env.get_template(swagger_file).render(
             accountId=self.account_id,
             Lambda=self.config['Lambda'],
             apiGateway=self.config['apiGateway'],
             region=self.region,
             stage=self.stage
-        )
-        return json.loads(rendered_template)
+        ))
+
+        integrations_template = self.apply_templates(first_template)
+
+        # We have to do this twice to template the integrations - I'm sorry.
+        j2_env = Environment(loader=DictLoader(
+            {'template': json.dumps(integrations_template)}))
+        j2_template = j2_env.get_template('template')
+        rendered_template = yaml.load(j2_template.render(
+            accountId=self.account_id,
+            Lambda=self.config['Lambda'],
+            apiGateway=self.config['apiGateway'],
+            region=self.region,
+            stage=self.stage
+        ))
+
+        return rendered_template
 
     def template_aws_integration(self, yoke_integration):
         integ = copy.deepcopy(templates.AWS_INTEGRATION)
