@@ -53,6 +53,8 @@ DEFAULT_RESPONSES = {
    'statusCode': '418'},
   '^422:.*': {'responseTemplates': {'application/json': '{"error": {"code": 422, "message": $input.json(\'$.errorMessage\')}}'},
    'statusCode': '422'},
+  '^423:.*': {'responseTemplates': {'application/json': '{"error": {"code": 423, "message": $input.json(\'$.errorMessage\')}}'},
+   'statusCode': '423'},
   '^500:.*': {'responseTemplates': {'application/json': '{"error": {"code": 500, "message": $input.json(\'$.errorMessage\')}}'},
    'statusCode': '500'},
   '^501:.*': {'responseTemplates': {'application/json': '{"error": {"code": 501, "message": $input.json(\'$.errorMessage\')}}'},
