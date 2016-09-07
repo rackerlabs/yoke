@@ -1,0 +1,25 @@
+swagger: '2.0'
+info:
+  version: '1.0'
+  title: "{{ apiGateway['name'] }}"
+  description: |
+    Test Swagger for Yoke
+produces:
+  - application/json
+schemes:
+  - https
+paths:
+  /hello:
+    get:
+      summary: Returns a greeting
+      responses:
+        200:
+          description: Success
+      x-amazon-apigateway-integration:
+        type: "aws"
+        uri: "arn:aws:apigateway:{{ region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ region }}:{{ accountId }}:function:{{ Lambda['config']['name'] }}:{{ stage }}/invocations"
+        credentials: "arn:aws:iam::{{ accountId }}:role/{{ apiGateway['role'] }}"
+        httpMethod: "POST"
+        responses:
+          default:
+            statusCode: '200'

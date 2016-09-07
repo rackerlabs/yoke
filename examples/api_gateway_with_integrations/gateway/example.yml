@@ -1,0 +1,51 @@
+swagger: '2.0'
+info:
+  version: '1.0'
+  title: "{{ apiGateway['name'] }}"
+  description: |
+    Test Swagger for Yoke
+produces:
+  - application/json
+schemes:
+  - https
+paths:
+  /hello:
+    get:
+      summary: Returns a greeting
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: User ID Not Found
+        500:
+          description: API fault
+        503:
+          description: Service Unavailable
+      x-yoke-integration:
+        operation: hello
+        request-template: default
+        response-template: default
+  /goodbye:
+    get:
+      summary: Returns a farewell
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+        403:
+          description: Forbidden
+        404:
+          description: User ID Not Found
+        500:
+          description: API fault
+        503:
+          description: Service Unavailable
+      x-yoke-integration:
+        operation: goodbye
+        request-template: default
+        response-template: default
