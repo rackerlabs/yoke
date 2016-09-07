@@ -10,4 +10,4 @@ def load_config():
 def lambda_handler(event, context):
     config = load_config()
     print(event)
-    return config['message']
+    return {"message": config['message']}

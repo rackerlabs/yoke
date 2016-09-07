@@ -1,0 +1,41 @@
+Lambda:
+  config:
+    name: yokeHelloWorld
+    description: "Hello World with Yoke"
+    handler: "handler.lambda_handler"
+    timeout: 300
+    memory: 256
+    ignore: ["/*.pyc"]
+    role: "lambda_basic_execution"
+  path: './src'
+  extraFiles:
+    - './lib/'
+apiGateway:
+  name: yokeHelloWorld
+  swaggerTemplate: './gateway/example.yml'
+  role: APIGatewayLambdaInvokeRole
+stages:
+  default: &DEFAULT
+    test: "{{ stage }}"
+    region: "us-east-1"
+    config:
+      message: "Hi from DEV!"
+  dev:
+    <<: *DEFAULT
+    config:
+      message: "Hi from Dev!"
+      apiKey: 739045723jkfo23457859
+      url: https://someurl.url
+      foo: |
+        some free form \n stuff in here
+
+        yep
+  staging:
+    <<: *DEFAULT
+    keyName: yokeTest
+    keyRegion: us-east-1
+    secret_config: CiCCM/++OaG61j7Ld8RPAE32b1LZBas6Or1EVAwZxdThARLnAQEBAgB4gjP/vjmhutY+y3fETwBN9m9S2QWrOjq9RFQMGcXU4QEAAAC+MIG7BgkqhkiG9w0BBwagga0wgaoCAQAwgaQGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMJesOjJpuXDNgIfyKAgEQgHd7N0goSpc013D8CuSwaVqVWawgp9PJ6F/TkKKGFQVmL7PT+x72EknOFXNUriorHLBX/FBvopkRZLqxRTxRyW9T/Lwm1lXZjHuNF/JGNLr9+F9W8uNTREHf7ZjhfxHMmBG06oBtIWnwa0E8hPZ+XMy7TpzUu/DMXA==
+  prod:
+    <<: *DEFAULT
+    config:
+      message: "Hi from Prod!"
