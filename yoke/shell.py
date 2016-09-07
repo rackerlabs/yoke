@@ -54,9 +54,10 @@ def main(arv=None):
     deploy_parser.add_argument('--stage', dest='stage', help='Stage to deploy',
                                default=os.getenv('YOKE_STAGE'))
     deploy_parser.add_argument('--environment', '-e', dest='environment',
-                               help=('Extra config values for lambda'
-                                     'environment. Format: KEYNAME=VALUE',),
-                               default=[], action='append')
+                               help=('Extra config values for lambda '
+                                     'config - can be used multiple times'),
+                               default=[], action='append',
+                               metavar='KEYNAME=VALUE')
     deploy_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
                                help='Project directory containing yoke.yml')
     deploy_parser.set_defaults(func=deploy_app)
@@ -66,9 +67,10 @@ def main(arv=None):
     deploy_parser.add_argument('--stage', dest='stage', help='Stage to build',
                                default=os.getenv('YOKE_STAGE'))
     deploy_parser.add_argument('--environment', '-e', dest='environment',
-                               help=('Extra config values for lambda'
-                                     'environment. Format: KEYNAME=VALUE',),
-                               default=[], action='append')
+                               help=('Extra config values for lambda '
+                                     'config - can be used multiple times'),
+                               default=[], action='append',
+                               metavar='KEYNAME=VALUE')
     deploy_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
                                help='Project directory containing yoke.yml')
     deploy_parser.set_defaults(func=build)
