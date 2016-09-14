@@ -71,8 +71,55 @@ DEFAULT_RESPONSES = {
    'statusCode': '200'}
 }
 
+APPLICATION_JSON_REQUEST = """\
+{
+  "operation": "{{ operation }}",
+  "parameters": {
+    "gateway": {
+      "id": "$context.apiId",
+      "stage": "$context.stage",
+      "request-id" : "$context.requestId",
+      "resource-path" : "$context.resourcePath",
+      "http-method": "$context.httpMethod",
+      "stage-data": {
+        #foreach($param in $stageVariables.keySet())
+        "$param": "$util.escapeJavaScript($stageVariables.get($param))" #if($foreach.hasNext),#end
+        #end
+      }
+    },
+    "requestor": {
+      "source-ip": "$context.identity.sourceIp",
+      "user-agent": "$context.identity.userAgent",
+      "account-id" : "$context.identity.accountId",
+      "api-key" : "$context.identity.apiKey",
+      "caller": "$context.identity.caller",
+      "user": "$context.identity.user",
+      "user-arn" : "$context.identity.userArn"
+    },
+    "request": {
+      "querystring": {
+        #foreach($param in $input.params().querystring.keySet())
+        "$param": "$util.escapeJavaScript($input.params().querystring.get($param))"#if($foreach.hasNext),#end
+        #end
+      },
+      "path": {
+        #foreach($param in $input.params().path.keySet())
+        "$param": "$util.escapeJavaScript($input.params().path.get($param))" #if($foreach.hasNext),#end
+        #end
+      },
+      "header": {
+        #foreach($param in $input.params().header.keySet())
+        "$param": "$util.escapeJavaScript($input.params().header.get($param))" #if($foreach.hasNext),#end
+        #end
+      },
+      "body": $input.json('$')
+    }
+  }
+}
+"""
+
 DEFAULT_REQUESTS = {
-    'application/json': "{\n  \"operation\": \"{{ operation }}\",\n  \"parameters\": {\n    \"gateway\": {\n      \"id\": \"$context.apiId\",\n      \"stage\": \"$context.stage\",\n      \"request-id\" : \"$context.requestId\",\n      \"resource-path\" : \"$context.resourcePath\",\n      \"http-method\": \"$context.httpMethod\",\n      \"stage-data\": {\n        #foreach($param in $stageVariables.keySet())\n        \"$param\": \"$util.escapeJavaScript($stageVariables.get($param))\" #if($foreach.hasNext),#end\n        #end\n      }\n    },\n    \"requestor\": {\n      \"source-ip\": \"$context.identity.sourceIp\",\n      \"user-agent\": \"$context.identity.userAgent\",\n      \"account-id\" : \"$context.identity.accountId\",\n      \"api-key\" : \"$context.identity.apiKey\",\n      \"caller\": \"$context.identity.caller\",\n      \"user\": \"$context.identity.user\",\n      \"user-arn\" : \"$context.identity.userArn\"\n    },\n    \"request\": {\n      \"querystring\": {\n        #foreach($param in $input.params().querystring.keySet())\n        \"$param\": \"$util.escapeJavaScript($input.params().querystring.get($param))\"#if($foreach.hasNext),#end\n        #end\n      },\n      \"path\": {\n        #foreach($param in $input.params().path.keySet())\n        \"$param\": \"$util.escapeJavaScript($input.params().path.get($param))\" #if($foreach.hasNext),#end\n        #end\n      },\n      \"header\": {\n        #foreach($param in $input.params().header.keySet())\n        \"$param\": \"$util.escapeJavaScript($input.params().header.get($param))\" #if($foreach.hasNext),#end\n        #end\n      },\n      \"body\": $input.json('$')\n    }\n  }\n}\n"
+    'application/json': APPLICATION_JSON_REQUEST,
 }
 
 AWS_INTEGRATION = {
