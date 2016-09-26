@@ -18,6 +18,8 @@ def build(args):
     if args.config.get('apiGateway'):
         template = deployment.render_swagger()
         swagger_file = deployment.write_template(template)
+        # Also write the deref'd JSON version
+        deployment.deref(template)
         LOG.warning('API Gateway Swagger file written to {}'.format(
                     swagger_file))
 

@@ -83,10 +83,12 @@ class Deployment(object):
 
         # Template swagger.yml from template
         template = self.render_swagger()
-        swagger_file = self.write_template(template)
+        self.write_template(template)
 
         # Import/Update API from swagger.yml
-        api = self.upload_api(swagger_file)
+        # Convert to JSON and deref for AWS API compatibility.
+        upload_body = self.deref(template)
+        api = self.upload_api(upload_body)
         LOG.warning("Deploying API to %s stage ...", self.stage)
         client = boto3.client('apigateway', region_name=self.region)
         deployment = client.create_deployment(
@@ -153,7 +155,7 @@ class Deployment(object):
                                         operation, 1)
         return template
 
-    def upload_api(self, swagger_file):
+    def upload_api(self, upload_body):
         LOG.warning("Uploading API to AWS Account %s for region %s ...",
                     self.account_id, self.region)
         client = boto3.client('apigateway', region_name=self.region)
@@ -167,30 +169,17 @@ class Deployment(object):
                 LOG.warning('Found existing API: %s', item['name'])
                 api = item
                 break
-        with open(swagger_file, 'r') as import_file:
-            raw_body = import_file.read()
-
-        # AWS doesn't quite have Swagger 2.0 validation right and will fail
-        # on some refs. So, we need to convert to deref before
-        # upload.
-
-        dict_body = yaml.load(raw_body)
-
-        # We have to make a deepcopy here to create a proper JSON
-        # compatible object, otherwise `json.dumps` fails when it
-        # hits jsonref.JsonRef objects.
-        deref_body = copy.deepcopy(jsonref.JsonRef.replace_refs(dict_body))
-        upload_body = json.dumps(deref_body)
 
         parameters = { 'basepath': 'prepend' }
         if api:
             LOG.warning("API %s already exists - updating ...", api['name'])
-            api = client.put_rest_api(restApiId=api['id'], body=upload_body,
+            api = client.put_rest_api(restApiId=api['id'],
+                                      body=json.dumps(upload_body),
                                       parameters=parameters)
         else:
             LOG.warning("API %s not found, importing ...",
                         self.config['apiGateway']['name'])
-            api = client.import_rest_api(body=upload_body,
+            api = client.import_rest_api(body=json.dumps(upload_body),
                                          parameters=parameters)
 
         return api
@@ -235,11 +224,33 @@ class Deployment(object):
         with open(lambda_json, 'w') as outfile:
             json.dump(self.config['Lambda']['config'], outfile)
 
-    def write_template(self, output):
-        swagger_file = os.path.join(self.project_dir, 'swagger.yml')
+    def write_template(self, output, filename=None):
+        if not filename:
+            filename = 'swagger.yml'
+        swagger_file = os.path.join(self.project_dir, filename)
+        _, ext = os.path.splitext(filename)
         with open(swagger_file, 'w') as fh:
-            fh.write(yaml.round_trip_dump(output))
+            # Could be `.yaml` or `.yml` :/
+            if '.y' in ext:
+                fh.write(yaml.round_trip_dump(output))
+            elif '.json' in ext:
+                fh.write(json.dumps(output))
         return swagger_file
+
+    def deref(self, data):
+        """AWS doesn't quite have Swagger 2.0 validation right and will fail
+        on some refs. So, we need to convert to deref before
+        upload."""
+
+        # We have to make a deepcopy here to create a proper JSON
+        # compatible object, otherwise `json.dumps` fails when it
+        # hits jsonref.JsonRef objects.
+        deref = copy.deepcopy(jsonref.JsonRef.replace_refs(data))
+
+        # Write out JSON version because we might want this.
+        self.write_template(deref, filename='swagger.json')
+
+        return deref
 
     def _format_vpc_config(self):
 
