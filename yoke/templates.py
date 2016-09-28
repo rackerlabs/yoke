@@ -38,7 +38,7 @@ RESPONSE_CODES = [
     505,
 ]
 DEFAULT_RESPONSES = {
-    '^{rc}'.format(rc=resp_code): {
+    '^{rc}:.*'.format(rc=resp_code): {
         'responseTemplates': {
             'application/json': (
                 APPLICATION_JSON_RESPONSE_FMT % dict(rc=resp_code)
