@@ -12,7 +12,7 @@ setup(
         'botocore>=1.4.24',
         'Jinja2==2.8',
         'jsonref==0.1',
-        'lambda-uploader==1.0.2',
+        'lambda-uploader==1.0.3',
         'retrying==1.3.3',
         'ruamel.yaml==0.11.11',
     ],
