@@ -174,6 +174,7 @@ class Deployment(object):
         if api:
             LOG.warning("API %s already exists - updating ...", api['name'])
             api = client.put_rest_api(restApiId=api['id'],
+                                      mode='overwrite',
                                       body=json.dumps(upload_body),
                                       parameters=parameters)
         else:
