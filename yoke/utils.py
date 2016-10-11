@@ -17,7 +17,7 @@ def check_encryption_required_fields(stage):
 
 def decrypt(config, output=False):
     stage = config['stage']
-    check_encryption_required_fields(stage)
+    check_encryption_required_fields(config['stages'][stage])
 
     enc_config = get_secret_config(config, stage)
     if not isinstance(enc_config, basestring):
