@@ -8,8 +8,16 @@ import ruamel.yaml as yaml
 LOG = logging.getLogger(__name__)
 
 
+def check_encryption_required_fields(stage):
+    for field in ['keyRegion', 'keyName']:
+        if field not in stage:
+            raise Exception("`{}` is a required field when secretConfig is "
+                            "used.".format(field))
+
+
 def decrypt(config, output=False):
     stage = config['stage']
+    check_encryption_required_fields(stage)
 
     enc_config = get_secret_config(config, stage)
     if not isinstance(enc_config, basestring):
@@ -30,6 +38,7 @@ def decrypt(config, output=False):
 
 def encrypt(config, output=False):
     stage = config['stages'][config['stage']]
+    check_encryption_required_fields(stage)
     secret_config = get_secret_config(config, config['stage'])
     kms = boto3.client('kms', region_name=stage['keyRegion'])
     key_name = 'alias/{}'.format(stage['keyName'])
