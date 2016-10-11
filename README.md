@@ -68,7 +68,7 @@ The heart of Yoke is the `yoke.yml` file. This file tells Yoke all the necessary
     * `keyName`: Optional - KMS key alias used to encrypt and decrypt the `secretConfig` section for this stage.
     * `keyRegion`: Optional - The region where `keyName` exists.
     * `secretConfig`: Optional - encrypted configuration for the stage - this section is decrypted and combined with `config` when running `yoke build` or `yoke deploy` and written to `config.json` in the `Lambda` path.
-    * `config`: These values are combined with `secretConfig` and written to `config.json` in the `Lambda` path.
+    * `config`: Optional - These values are combined with `secretConfig` and written to `config.json` in the `Lambda` path.
 
 You can also template `yoke.yml` using Jinja-style templating. When you run `yoke {build,deploy}`, these template variables will be sourced from any variables you privide via `--environment/-e`. By default, `{{ stage }}` is automatically provided as it is a required argument for all operations.
 

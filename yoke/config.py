@@ -40,7 +40,10 @@ class YokeConfig(object):
         config['project_dir'] = self.project_dir
         config['account_id'] = self.get_account_id()
 
-        if not self._args.func.func_name in ['encrypt', 'decrypt']:
+        if 'config' not in config['stages'][self.stage]:
+            config['stages'][self.stage]['config'] = {}
+
+        if self._args.func.func_name not in ['encrypt', 'decrypt']:
             if config['stages'][self.stage].get('secret_config') or \
               config['stages'][self.stage].get('secretConfig'):
                 dec_config = utils.decrypt(config)
