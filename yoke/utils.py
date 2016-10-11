@@ -36,7 +36,7 @@ def encrypt(config, output=False):
     resp = kms.encrypt(KeyId=key_name,
                        Plaintext=bytes(json.dumps(secret_config)))
     if output:
-        print('Encrypted config for stage {}:\n\n{}'.format(
+        print('Encrypted config for stage {}:\nsecretConfig: "{}"\n'.format(
             config['stage'],
             base64.b64encode(resp['CiphertextBlob'])))
 
