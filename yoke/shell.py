@@ -23,6 +23,7 @@ def build(args):
         LOG.warning('API Gateway Swagger file written to {}'.format(
                     swagger_file))
 
+
 def decrypt(args):
     utils.decrypt(args.config, output=True)
 
@@ -51,7 +52,8 @@ def main(arv=None):
                         action='store_const', const=logging.DEBUG)
     parser.set_defaults(loglevel=logging.WARNING)
 
-    deploy_parser = subparsers.add_parser('deploy',
+    deploy_parser = subparsers.add_parser(
+        'deploy',
         help='Deploy lambda and (optionally) API Gateway.')
     deploy_parser.add_argument('--stage', dest='stage', help='Stage to deploy',
                                default=os.getenv('YOKE_STAGE'))
@@ -64,7 +66,8 @@ def main(arv=None):
                                help='Project directory containing yoke.yml')
     deploy_parser.set_defaults(func=deploy_app)
 
-    deploy_parser = subparsers.add_parser('build',
+    deploy_parser = subparsers.add_parser(
+        'build',
         help='Only template config files and build lambda package.')
     deploy_parser.add_argument('--stage', dest='stage', help='Stage to build',
                                default=os.getenv('YOKE_STAGE'))
