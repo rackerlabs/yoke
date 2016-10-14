@@ -57,6 +57,33 @@ DEFAULT_RESPONSES['default'] = {
 
 APPLICATION_JSON_REQUEST = """\
 {
+  "rawContext": {
+    "apiId": "$context.apiId",
+    "authorizer": {
+      "principalId": "$context.authorizer.principalId",
+      "claims": {
+        "property": "$context.authorizer.claims.property"
+      }
+    },
+    "httpMethod": "$context.httpMethod",
+    "identity": {
+      "accountId": "$context.identity.accountId",
+      "apiKey": "$context.identity.apiKey",
+      "caller": "$context.identity.caller",
+      "cognitoAuthenticationProvider": "$context.identity.cognitoAuthenticationProvider",
+      "cognitoAuthenticationType": "$context.identity.cognitoAuthenticationType",
+      "cognitoIdentityId": "$context.identity.cognitoIdentityId",
+      "cognitoIdentityPoolId": "$context.identity.cognitoIdentityPoolId",
+      "sourceIp": "$context.identity.sourceIp",
+      "user": "$context.identity.user",
+      "userAgent": "$context.identity.userAgent",
+      "userArn": "$context.identity.userArn"
+    },
+    "requestId": "$context.requestId",
+    "resourceId": "$context.resourceId",
+    "resourcePath": "$context.resourcePath",
+    "stage": "$context.stage"
+  },
   "operation": "{{ operation }}",
   "parameters": {
     "gateway": {
