@@ -47,8 +47,13 @@ class Deployment(object):
 
     def build_lambda_package(self):
         LOG.warning("Building Lambda package ...")
-        pkg = package.build_package(self.lambda_path, None,
-                                    extra_files=self.extra_files)
+        pkg = package.Package(self.lambda_path)
+        pkg._requirements_file = None
+        if self.extra_files:
+            for _file in self.extra_files:
+                pkg.extra_file(_file)
+        pkg._prepare_workspace()
+        pkg.package()
         pkg.clean_workspace()
         return pkg
 
