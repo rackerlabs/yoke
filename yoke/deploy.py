@@ -64,6 +64,7 @@ class Deployment(object):
         Lambda['config']['alias'] = self.stage
         Lambda['config']['alias_description'] = Lambda['config']['description']
         Lambda['config']['region'] = self.region
+        Lambda['config']['variables'] = {}
         ordered = OrderedDict(sorted(Lambda['config'].items(),
                                      key=lambda x: x[1]))
         upldr_config = namedtuple('config', ordered.keys())(**ordered)
