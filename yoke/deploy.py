@@ -262,4 +262,7 @@ class Deployment(object):
     def _format_vpc_config(self):
 
         # todo(ryandub): Add VPC support
-        return {}
+        return {
+            'SecurityGroupIds': [],
+            'SubnetIds': [],
+        }
