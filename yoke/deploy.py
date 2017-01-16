@@ -41,8 +41,9 @@ class Deployment(object):
         for path, methods in paths.items():
             for method, _config in methods.items():
                 if _config.get('x-yoke-integration'):
-                    template['paths'][path][method][aws_int] = self.template_aws_integration(
-                        _config['x-yoke-integration'])
+                    template['paths'][path][method][
+                        aws_int] = self.template_aws_integration(
+                            _config['x-yoke-integration'])
         return template
 
     def build_lambda_package(self):
@@ -145,8 +146,10 @@ class Deployment(object):
 
     def template_aws_integration(self, yoke_integration):
         integ = copy.deepcopy(templates.AWS_INTEGRATION)
-        integ['requestTemplates'] = copy.deepcopy(templates.DEFAULT_REQUESTS)
-        integ['requestTemplates']['application/json'] = self.template_operation(
+        location = 'requestTemplates'
+        content_type = 'application/json'
+        integ[location] = copy.deepcopy(templates.DEFAULT_REQUESTS)
+        integ[location][content_type] = self.template_operation(
             integ['requestTemplates']['application/json'],
             yoke_integration.get('operation'),
         )
@@ -176,7 +179,7 @@ class Deployment(object):
                 api = item
                 break
 
-        parameters = { 'basepath': 'prepend' }
+        parameters = {'basepath': 'prepend'}
         if api:
             LOG.warning("API %s already exists - updating ...", api['name'])
             api = client.put_rest_api(restApiId=api['id'],

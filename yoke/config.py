@@ -44,8 +44,8 @@ class YokeConfig(object):
             config['stages'][self.stage]['config'] = {}
 
         if self._args.func.func_name not in ['encrypt', 'decrypt']:
-            if config['stages'][self.stage].get('secret_config') or \
-              config['stages'][self.stage].get('secretConfig'):
+            if (config['stages'][self.stage].get('secret_config') or
+                    config['stages'][self.stage].get('secretConfig')):
                 dec_config = utils.decrypt(config)
                 config['stages'][self.stage]['config'].update(dec_config)
 

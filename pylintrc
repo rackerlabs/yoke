@@ -1,0 +1,24 @@
+[Messages Control]
+disable=
+  bad-builtin,
+  locally-disabled,
+  fixme,
+  duplicate-code,
+  unused-argument
+
+[BASIC]
+# Don't require docstrings on tests or Python Special Methods
+no-docstring-rgx=(__.*__|[tT]est.*|setUp|tearDown)
+# Some names we are okay with
+good-names=f,e,i,j,k,v,ex,_,x,y,z,id
+# No camel case globals, max length 30
+const-rgx=(^([A-Za-z_](?!(([A-Z][a-z0-9]+)+))){2,30}$)
+function-rgx=[a-z_][a-z0-9_]{2,32}$
+# allow camelcase attrs for dynamo tables
+attr-rgx=[a-z_][A-Za-z0-9_]{2,30}$
+
+[REPORTS]
+msg-template={msg_id}({symbol}): {path},{line}: {msg} | {obj}
+reports=yes
+output-format=colorized
+

@@ -1,3 +1,5 @@
+# flake8: noqa
+
 APPLICATION_JSON_RESPONSE_FMT = (
     '{"error": {"code": %(rc)s, "message": $input.json(\'$.errorMessage\')}}'
 )
