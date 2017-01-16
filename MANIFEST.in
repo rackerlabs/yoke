@@ -1,0 +1,6 @@
+include *.md
+include *.txt
+recursive-include examples *.md
+recursive-include examples *.py
+recursive-include examples *.txt
+recursive-include examples *.yml
