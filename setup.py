@@ -8,7 +8,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     test_suite='tests',
     install_requires=[
-        'boto3==1.4.2',
+        'boto3<1.5.0',
         'botocore>=1.4.85',
         'Jinja2==2.8',
         'jsonref==0.1',
