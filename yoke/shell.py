@@ -100,9 +100,10 @@ def main(arv=None):
 
     if args.loglevel is logging.WARNING:
         format = "%(message)s"
-        logging.basicConfig(level=args.loglevel, format=format)
+        logging.basicConfig(level=args.loglevel, format=format,
+                            stream=sys.stdout)
     else:
-        logging.basicConfig(level=args.loglevel)
+        logging.basicConfig(level=args.loglevel, stream=sys.stdout)
 
     try:
         args.project_dir = os.path.abspath(args.project_dir)
