@@ -1,0 +1,20 @@
+machine:
+  python:
+    version: '2.7.11'
+
+dependencies:
+  override:
+    - pip install -U pip
+    - pip install -U tox tox-pyenv twine
+    - pyenv local 2.7.10 3.5.2
+
+test:
+  override:
+    - tox
+
+deployment:
+  master-deploy:
+    branch: master
+    commands:
+      - python setup.py sdist bdist_wheel
+      - twine upload --username ${TWINE_USER} --password ${TWINE_PASSWORD} dist/*
