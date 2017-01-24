@@ -14,5 +14,5 @@ if [[ "${CIRCLE_BRANCH}" == release_* ]] ; then
 
     mkdir release
     cp -a ./dist/* release/
-    ./gh-release create "${CPU}"/"${CPR}" "${RELEASE}"
+    ./gh-release create "${CPU}"/"${CPR}" "${RELEASE}" "${CIRCLE_BRANCH}"
 fi

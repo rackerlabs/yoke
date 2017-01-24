@@ -22,4 +22,4 @@ deployment:
     commands:
       - wget https://github.com/progrium/gh-release/releases/download/v2.2.1/gh-release_2.2.1_linux_x86_64.tgz -O gh-release.tgz
       - tar xvf gh-release.tgz
-      - release_yoke.sh
+      - ./release_yoke.sh
