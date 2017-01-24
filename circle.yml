@@ -11,10 +11,15 @@ dependencies:
 test:
   override:
     - tox
+    # Always run a build when testing to ensure code is buildable.
+    - python setup.py sdist bdist_wheel
+    - cp -a dist/* ${CIRCLE_ARTIFACTS}
 
 deployment:
-  master-deploy:
-    branch: master
+  release-deploy:
+    branch: /release_.*/
+    owner: rackerlabs
     commands:
-      - python setup.py sdist bdist_wheel
-      - twine upload --username ${TWINE_USER} --password ${TWINE_PASSWORD} dist/*
+      - wget https://github.com/progrium/gh-release/releases/download/v2.2.1/gh-release_2.2.1_linux_x86_64.tgz -O gh-release.tgz
+      - tar xvf gh-release.tgz
+      - release_yoke.sh
