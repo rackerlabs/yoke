@@ -93,7 +93,7 @@ class YokeConfig(object):
         with open(self.yoke_path, 'r') as config_file:
             raw = config_file.readlines()
         raw = self.render_config(raw)
-        return yaml.load(raw)
+        return yaml.safe_load(raw)
 
     def render_config(self, config):
         vars = self.env_dict
