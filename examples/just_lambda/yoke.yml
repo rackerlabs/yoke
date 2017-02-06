@@ -5,6 +5,7 @@ Lambda:
     handler: "handler.lambda_handler"
     timeout: 300
     memory: 256
+    runtime: "python2.7"
     ignore: ["/*.pyc"]
     role: "lambda_basic_execution"
   path: './src'

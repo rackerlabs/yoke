@@ -65,6 +65,8 @@ class Deployment(object):
         Lambda['config']['alias'] = self.stage
         Lambda['config']['alias_description'] = Lambda['config']['description']
         Lambda['config']['region'] = self.region
+        Lambda['config']['runtime'] = Lambda['config'].get('runtime',
+                                                           'python2.7')
         Lambda['config']['variables'] = {}
         ordered = OrderedDict(sorted(Lambda['config'].items(),
                                      key=lambda x: x[1]))
