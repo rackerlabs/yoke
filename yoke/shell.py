@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 
+from . import __version__
 import config
 import deploy
 import utils
@@ -23,6 +24,8 @@ def build(args):
         LOG.warning('API Gateway Swagger file written to {}'.format(
                     swagger_file))
 
+    deployment.build_lambda_package()
+
 
 def decrypt(args):
     utils.decrypt(args.config, output=True)
@@ -42,7 +45,7 @@ def encrypt(args):
 
 def main(arv=None):
     parser = argparse.ArgumentParser(
-        version='version 0.0.1',
+        version='version {}'.format(__version__),
         description='AWS Lambda + API Gateway Deployment Tool'
     )
 
