@@ -46,10 +46,14 @@ class Deployment(object):
                             _config['x-yoke-integration'])
         return template
 
-    def build_lambda_package(self):
+    def build_lambda_package(self, skip_if_exists=False):
         LOG.warning("Building Lambda package ...")
         pkg = package.Package(self.lambda_path)
         pkg._requirements_file = None
+        if skip_if_exists and os.path.isfile(pkg.zip_file):
+            # Package already built, don't do anything else
+            return pkg
+
         if self.extra_files:
             for _file in self.extra_files:
                 pkg.extra_file(_file)
@@ -76,7 +80,7 @@ class Deployment(object):
     def deploy_lambda(self):
         self.write_lambda_json()
         self.write_lambda_config()
-        pkg = self.build_lambda_package()
+        pkg = self.build_lambda_package(skip_if_exists=True)
 
         # Create fake config for lambda uploader because
         # it isn't completely ok with being used as a library.
