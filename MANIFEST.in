@@ -1,5 +1,6 @@
 include *.md
 include *.txt
+include LICENSE
 recursive-include examples *.md
 recursive-include examples *.py
 recursive-include examples *.txt
