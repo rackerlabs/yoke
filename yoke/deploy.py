@@ -78,7 +78,12 @@ class Deployment(object):
                 service_name = self.config['Lambda']['config']['name']
                 wheelhouse_path = dependency_config.get('wheelhouse')
                 if wheelhouse_path is not None:
-                    wheelhouse_path = os.path.abspath(wheelhouse_path)
+                    wheelhouse_path = os.path.abspath(
+                        os.path.join(
+                            wheelhouse_path,
+                            service_name,
+                        ),
+                    )
                 else:
                     wheelhouse_path = os.path.abspath(
                         os.path.join(

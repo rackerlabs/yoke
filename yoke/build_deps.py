@@ -1,5 +1,7 @@
+from hashlib import sha1
 import logging
 import os
+import subprocess
 from tempfile import mkstemp
 import time
 
@@ -87,7 +89,46 @@ class PythonDependencyBuilder(object):
         self.service_name = service_name
         self.extra_packages = extra_packages or []
 
+    def should_rebuild(self):
+        # There's a way to force rebuilding of dependencies
+        if os.environ.get('FORCE_WHEEL_REBUILD') == 'true':
+            LOG.warning(
+                "FORCE_WHEEL_REBUILD env variable set, rebuilding "
+                "dependencies.")
+            return True
+        # There's also a way to remove all existing dependencies, to force a
+        # rebuild that way.
+        sha1sum_file = os.path.join(self.wheelhouse_path, 'sha1sum')
+        if os.environ.get('FORCE_WHEEL_CLEANUP') == 'true':
+            LOG.warning(
+                "FORCE_WHEEL_CLEANUP env variable set, cleaning up dependency "
+                "directory.")
+            wheel_pattern = os.path.join(self.wheelhouse_path, '*.whl')
+            subprocess.call('rm -f {}'.format(wheel_pattern), shell=True)
+            subprocess.call(['rm', '-f', sha1sum_file])
+
+        if not os.path.isfile(sha1sum_file):
+            LOG.warning(
+                "SHA1 checksum file does not exist, rebuilding dependencies.")
+            return True
+        with open(sha1sum_file, 'r') as fp:
+            sha1sum = fp.read().strip()
+
+        requirements_file = os.path.join(self.lambda_path, 'requirements.txt')
+        with open(requirements_file, 'r') as fp:
+            calculated_sha1sum = sha1(fp.read()).hexdigest()
+
+        if sha1sum != calculated_sha1sum:
+            LOG.warning("SHA1 mismatch, rebuilding dependencies.")
+            return True
+        else:
+            LOG.warning("SHA1 match, skip building dependencies.")
+            return False
+
     def build(self):
+        if not self.should_rebuild():
+            return
+
         try:
             # Allow connecting to older Docker versions (e.g. CircleCI 1.0)
             client = docker.from_env(version='auto')
@@ -103,7 +144,6 @@ class PythonDependencyBuilder(object):
                 command='/bin/bash -c "./build_wheels.sh"',
                 detach=True,
                 environment={
-                    'SERVICE': self.service_name,
                     'EXTRA_PACKAGES': ' '.join(self.extra_packages),
                     'PY_VERSION': PYTHON_VERSION_MAP[self.runtime],
                 },

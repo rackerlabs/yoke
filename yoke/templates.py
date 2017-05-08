@@ -165,9 +165,9 @@ find /wheelhouse -type f \\
     -not -name "*none-any.whl" \\
     -exec auditwheel repair {} -w /wheelhouse/ \;
 
-# Provide checksum file that can be used in a CI build script to check whether
-# dependencies have to be rebuilt.
-cksum /src/requirements.txt |cut -d " " -f 1 > /wheelhouse/${SERVICE}_cksum
+# Provide SHA1-sum file that we can check against to see if dependencies should
+# be rebuilt.
+sha1sum /src/requirements.txt | cut -d " " -f 1 > /wheelhouse/sha1sum
 """
 
 DOCKER_INSTALL_SCRIPT = """\
