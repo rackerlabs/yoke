@@ -1,0 +1,170 @@
+import logging
+import os
+from tempfile import mkstemp
+import time
+
+import docker
+
+from .templates import DOCKER_BUILD_SCRIPT
+from .templates import DOCKER_INSTALL_SCRIPT
+
+LOG = logging.getLogger(__name__)
+
+BUILD_IMAGE = "quay.io/pypa/manylinux1_x86_64"
+CONTAINER_POLL_INTERVAL = 10
+PYTHON_VERSION_MAP = {
+    # cp27-mu is compiled with ucs4 support which is the same as Lambda
+    'python2.7': 'cp27-cp27mu',
+    'python3.6': 'cp36-cp36m',
+}
+STATUS_EXITED = 'exited'
+
+
+def wait_for_container_to_finish(container):
+    while container.status != STATUS_EXITED:
+        time.sleep(CONTAINER_POLL_INTERVAL)
+        container.reload()
+
+    exit_code = container.attrs['State']['ExitCode']
+    if exit_code != 0:
+        # Save logs for further inspection -- if we are on CircleCI, save the
+        # file under the artifacts directory.
+        basepath = (
+            os.environ['CIRCLE_ARTIFACTS']
+            if 'CIRCLECI' in os.environ
+            else '.'
+        )
+        log_filename = os.path.join(
+            basepath,
+            'container_{}.log'.format(container.short_id),
+        )
+        with open(log_filename, 'w') as fp:
+            fp.write(container.logs(stdout=True, stderr=True))
+
+        raise Exception(
+            "Container exited with non-zero code. Logs saved to {}".format(
+                log_filename)
+        )
+
+
+def remove_container(container):
+    try:
+        container.remove()
+    except:
+        # We just log an error and swallow the exception, because this happens
+        # often on CircleCI.
+        LOG.error(
+            "Could not remove container, please remove it manually (ID: %s)",
+            container.short_id,
+        )
+
+
+class PythonDependencyBuilder(object):
+
+    def __init__(self, runtime, project_path, wheelhouse_path, lambda_path,
+                 install_dir, service_name, extra_packages=None):
+        """Initialize dependency builder object.
+
+        :param runtime: Lambda Python runtime version.
+        :param project_path: Full path to the project root, where `yoke.yml`
+        exists.
+        :param wheelhouse_path: Full path to the directory that will hold
+        the build depdendencies (wheels).
+        :param lambda_path: Full path to the directory where the Lambda
+        function's code lives.
+        :param install_dir: Relative path within the project root where the
+        dependencies will be installed.
+        :param service_name: Name of the service, used for creating some
+        sub-directories and files.
+        :param extra_packages: List of extra CentOS packages that should be
+        installed before the dependencies are built.
+        """
+        self.runtime = runtime
+        self.project_path = project_path
+        self.wheelhouse_path = wheelhouse_path
+        self.lambda_path = lambda_path
+        self.install_dir = install_dir
+        self.service_name = service_name
+        self.extra_packages = extra_packages or []
+
+    def build(self):
+        try:
+            # Allow connecting to older Docker versions (e.g. CircleCI 1.0)
+            client = docker.from_env(version='auto')
+        except:
+            LOG.error("Docker is not running, or it's outdated.")
+            raise
+
+        # Build dependencies
+        build_script_path = self.generate_build_script()
+        try:
+            container = client.containers.run(
+                image=BUILD_IMAGE,
+                command='/bin/bash -c "./build_wheels.sh"',
+                detach=True,
+                environment={
+                    'SERVICE': self.service_name,
+                    'EXTRA_PACKAGES': ' '.join(self.extra_packages),
+                    'PY_VERSION': PYTHON_VERSION_MAP[self.runtime],
+                },
+                volumes={
+                    self.wheelhouse_path: {'bind': '/wheelhouse'},
+                    self.lambda_path: {'bind': '/src'},
+                    build_script_path: {'bind': '/build_wheels.sh'},
+                },
+            )
+            LOG.warning(
+                "Build container started, waiting for completion (ID: %s)",
+                container.short_id,
+            )
+            wait_for_container_to_finish(container)
+            LOG.warning("Build finished.")
+            remove_container(container)
+        finally:
+            os.remove(build_script_path)
+
+        # Install dependencies
+        install_script_path = self.generate_install_script()
+        try:
+            project_path = os.path.dirname(self.lambda_path)
+            container = client.containers.run(
+                image=BUILD_IMAGE,
+                command='/bin/bash -c "./install_wheels.sh"',
+                detach=True,
+                environment={
+                    'INSTALL_DIR': self.install_dir,
+                    'PY_VERSION': PYTHON_VERSION_MAP[self.runtime],
+                },
+                volumes={
+                    self.wheelhouse_path: {'bind': '/wheelhouse'},
+                    project_path: {'bind': '/src'},
+                    install_script_path: {'bind': '/install_wheels.sh'},
+                },
+            )
+            LOG.warning(
+                "Install container started, waiting for completion (ID: %s)",
+                container.short_id,
+            )
+            wait_for_container_to_finish(container)
+            LOG.warning("Install finished.")
+            remove_container(container)
+        finally:
+            os.remove(install_script_path)
+
+    def _generate_script(self, contents):
+        # Place temporary file inside `/tmp`, because Docker for Mac only
+        # allows mounting volumes from certain locations, and the default temp
+        # directory is not among them.
+        fd, filename = mkstemp(suffix='.sh', dir='/tmp')
+        os.close(fd)
+        with open(filename, 'w') as fp:
+            fp.write(contents)
+
+        os.chmod(filename, 0755)
+        return filename
+
+    def generate_build_script(self):
+        return self._generate_script(DOCKER_BUILD_SCRIPT)
+
+    def generate_install_script(self):
+        return self._generate_script(DOCKER_INSTALL_SCRIPT)

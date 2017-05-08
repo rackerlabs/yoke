@@ -13,6 +13,7 @@ from lambda_uploader import package, uploader
 from retrying import retry
 import ruamel.yaml as yaml
 
+from build_deps import PythonDependencyBuilder
 import templates
 import utils
 
@@ -50,9 +51,53 @@ class Deployment(object):
         LOG.warning("Building Lambda package ...")
         pkg = package.Package(self.lambda_path)
         pkg._requirements_file = None
-        if skip_if_exists and os.path.isfile(pkg.zip_file):
-            # Package already built, don't do anything else
-            return pkg
+        if os.path.isfile(pkg.zip_file):
+            if skip_if_exists:
+                # Package already built, don't do anything else
+                LOG.warning(
+                    "Lambda package already built, using existing file.")
+                return pkg
+            else:
+                # Otherwise we should delete the existing file, otherwise it
+                # will be packaged up.
+                LOG.warning("Removing existing Lambda package.")
+                os.remove(pkg.zip_file)
+
+        dependency_config = self.config['Lambda'].get('dependencies')
+        if dependency_config is not None:
+            build_enabled = dependency_config.get('build', False)
+            if build_enabled:
+                LOG.warning("Building dependencies enabled ...")
+                runtime = self.config['Lambda']['config'].get(
+                    'runtime', 'python2.7')
+                if not runtime.startswith('python'):
+                    raise Exception(
+                        "Building dependencies only supported on Python "
+                        "runtimes."
+                    )
+                service_name = self.config['Lambda']['config']['name']
+                wheelhouse_path = dependency_config.get('wheelhouse')
+                if wheelhouse_path is not None:
+                    wheelhouse_path = os.path.abspath(wheelhouse_path)
+                else:
+                    wheelhouse_path = os.path.abspath(
+                        os.path.join(
+                            self.project_dir,
+                            '../../wheelhouse',
+                            service_name,
+                        ),
+                    )
+                install_dir = dependency_config.get('install_dir') or './lib'
+                builder = PythonDependencyBuilder(
+                    runtime=runtime,
+                    project_path=self.project_dir,
+                    wheelhouse_path=wheelhouse_path,
+                    lambda_path=self.lambda_path,
+                    install_dir=install_dir,
+                    service_name=service_name,
+                    extra_packages=dependency_config.get('packages'),
+                )
+                builder.build()
 
         if self.extra_files:
             for _file in self.extra_files:

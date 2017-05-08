@@ -1,5 +1,6 @@
 boto3==1.4.2
 botocore==1.4.85
+docker==2.2.1
 Jinja2==2.8
 jsonref==0.1
 lambda-uploader==1.1.0
