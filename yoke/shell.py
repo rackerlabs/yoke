@@ -69,19 +69,19 @@ def main(arv=None):
                                help='Project directory containing yoke.yml')
     deploy_parser.set_defaults(func=deploy_app)
 
-    deploy_parser = subparsers.add_parser(
+    build_parser = subparsers.add_parser(
         'build',
         help='Only template config files and build lambda package.')
-    deploy_parser.add_argument('--stage', dest='stage', help='Stage to build',
-                               default=os.getenv('YOKE_STAGE'))
-    deploy_parser.add_argument('--environment', '-e', dest='environment',
-                               help=('Extra config values for lambda '
-                                     'config - can be used multiple times'),
-                               default=[], action='append',
-                               metavar='KEYNAME=VALUE')
-    deploy_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
-                               help='Project directory containing yoke.yml')
-    deploy_parser.set_defaults(func=build)
+    build_parser.add_argument('--stage', dest='stage', help='Stage to build',
+                              default=os.getenv('YOKE_STAGE'))
+    build_parser.add_argument('--environment', '-e', dest='environment',
+                              help=('Extra config values for lambda '
+                                    'config - can be used multiple times'),
+                              default=[], action='append',
+                              metavar='KEYNAME=VALUE')
+    build_parser.add_argument('project_dir', default=os.getcwd(), nargs='?',
+                              help='Project directory containing yoke.yml')
+    build_parser.set_defaults(func=build)
 
     decrypt_parser = subparsers.add_parser('decrypt')
     decrypt_parser.add_argument('--stage', dest='stage',

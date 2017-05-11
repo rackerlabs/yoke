@@ -50,8 +50,14 @@ The heart of Yoke is the `yoke.yml` file. This file tells Yoke all the necessary
     * `memory`: The amount (in Megabytes) of memory to configure for the function.
     * `ignore`: A list of regex patterns of files to exclude when building and uploading the function.
     * `role`: The IAM role to assume when this function is run.
+    * `runtime`: Lambda Runtime (default: `python2.7`).
   * `path`: The path to the root of your Lambda module.
   * `extraFiles`: A list of additional files or directories to include in the Lambda package when uploading. This is useful for including requirements using `pip install -t <requirements_directory> <somepackage>`.
+  * `dependencies`: Optional information about dependencies of the function:
+    * `build`: If set to `true`, the Python dependencies listed in the Lambda function's `requirements.txt` file will be built and packaged with the function (default: `false`).
+    * `wheelhouse`: The path to the directory where the dependency packages will be stored (in wheel format, default: `../../wheelhouse`).
+    * `install_dir`: The path to the directory where the dependencies will be installed (should be added to `extraFiles` above as well, otherwise they won't be included in the Lambda package, default: `./lib`).
+    * `packages`: List of CentOS package names that should be installed before the dependencies are built. The following packages are installed regardless of what is provided here: `libffi-devel` and `openssl-devel`. Default: no additional packages.
 * `apiGateway`: Optional - information about API Gateway configuration.
   * `name`: The name of the API Gateway.
   * `swaggerTemplate`: Path to the Swagger template file.

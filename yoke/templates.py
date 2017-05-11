@@ -141,3 +141,45 @@ AWS_INTEGRATION = {
     'type': 'aws',
     'uri': "arn:aws:apigateway:{{ region }}:lambda:path/2015-03-31/functions/arn:aws:lambda:{{ region }}:{{ accountId }}:function:{{ Lambda['config']['name'] }}:{{ stage }}/invocations"
 }
+
+DOCKER_BUILD_SCRIPT = """\
+#!/bin/bash
+
+set -e -x
+
+# cryptography needs libffi-devel and openssl-devel, also install extra build
+# dependencies.
+yum install -y libffi-devel openssl-devel ${EXTRA_PACKAGES}
+
+PYBIN="/opt/python/${PY_VERSION}/bin"
+
+# Enable compiling against OpenSSL 0.9.8
+CRYPTOGRAPHY_ALLOW_OPENSSL_098="true"
+
+${PYBIN}/pip wheel --no-binary :all: -w /wheelhouse -r /src/requirements.txt
+
+# We only want to repair platform wheels that were compiled - not universal
+# wheels.
+find /wheelhouse -type f \\
+    -name "*.whl" \\
+    -not -name "*none-any.whl" \\
+    -exec auditwheel repair {} -w /wheelhouse/ \;
+
+# Provide SHA1-sum file that we can check against to see if dependencies should
+# be rebuilt.
+sha1sum /src/requirements.txt | cut -d " " -f 1 > /wheelhouse/sha1sum
+"""
+
+DOCKER_INSTALL_SCRIPT = """\
+#!/bin/bash
+
+set -e -x
+
+PYBIN="/opt/python/${PY_VERSION}/bin"
+
+${PYBIN}/pip install -t /src/${INSTALL_DIR} \\
+    --no-compile \\
+    --no-index \\
+    --find-links /wheelhouse \\
+    -r /src/lambda/requirements.txt
+"""
