@@ -3,10 +3,9 @@ import logging
 import os
 import sys
 
-from . import __version__
-import config
-import deploy
-import utils
+from . import config
+from . import deploy
+from . import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -45,7 +44,6 @@ def encrypt(args):
 
 def main(arv=None):
     parser = argparse.ArgumentParser(
-        version='version {}'.format(__version__),
         description='AWS Lambda + API Gateway Deployment Tool'
     )
 

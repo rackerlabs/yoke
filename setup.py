@@ -51,6 +51,7 @@ setup(
     install_requires=INSTALL_REQUIRES,
     classifiers=[
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
     ],
     license=license,
     author="Rackers",

@@ -13,9 +13,9 @@ from lambda_uploader import package, uploader
 from retrying import retry
 import ruamel.yaml as yaml
 
-from build_deps import PythonDependencyBuilder
-import templates
-import utils
+from .build_deps import PythonDependencyBuilder
+from . import templates
+from . import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ class Deployment(object):
                                                            'python2.7')
         Lambda['config']['variables'] = {}
         ordered = OrderedDict(sorted(Lambda['config'].items(),
-                                     key=lambda x: x[1]))
+                                     key=lambda x: str(x[1])))
         upldr_config = namedtuple('config', ordered.keys())(**ordered)
         return upldr_config
 
