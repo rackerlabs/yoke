@@ -267,8 +267,8 @@ class Deployment(object):
             aws_account_id = boto3.client('iam').get_user()[
                 'User']['Arn'].split(':')[4]
         except ClientError:
-            aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
-                'Users'][0]['Arn'].split(':')[4]
+            aws_account_id = boto3.client('sts').get_caller_identity()[
+                'Account']
         try:
             assert aws_account_id == self.account_id
         except Exception:

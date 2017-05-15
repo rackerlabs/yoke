@@ -82,8 +82,8 @@ class YokeConfig(object):
         except ClientError as exc:
             LOG.debug("Failed to get account via get_user()...\n %s",
                       str(exc))
-            aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
-                'Users'][0]['Arn'].split(':')[4]
+            aws_account_id = boto3.client('sts').get_caller_identity()[
+                'Account']
 
         return str(aws_account_id)
 
