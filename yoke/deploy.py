@@ -122,6 +122,7 @@ class Deployment(object):
         Lambda['config']['runtime'] = Lambda['config'].get('runtime',
                                                            'python2.7')
         Lambda['config']['variables'] = {}
+        Lambda['config']['raw'] = {'vpc': Lambda['config'].get('vpc')}
         ordered = OrderedDict(sorted(Lambda['config'].items(),
                                      key=lambda x: str(x[1])))
         upldr_config = namedtuple('config', ordered.keys())(**ordered)
@@ -254,7 +255,6 @@ class Deployment(object):
         LOG.warning("Uploading Lambda %s to AWS Account %s "
                     "for region %s ...",
                     upldr_config.name, self.account_id, upldr_config.region)
-        uploader.PackageUploader._format_vpc_config = self._format_vpc_config
         upldr = uploader.PackageUploader(upldr_config, None)
         upldr.upload(pkg)
         upldr.alias()
@@ -317,11 +317,3 @@ class Deployment(object):
         self.write_template(deref, filename='swagger.json')
 
         return deref
-
-    def _format_vpc_config(self):
-
-        # todo(ryandub): Add VPC support
-        return {
-            'SecurityGroupIds': [],
-            'SubnetIds': [],
-        }
