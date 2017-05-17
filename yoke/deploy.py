@@ -123,6 +123,8 @@ class Deployment(object):
                                                            'python2.7')
         Lambda['config']['variables'] = {}
         Lambda['config']['raw'] = {'vpc': Lambda['config'].get('vpc')}
+        if not Lambda['config'].get('tracing'):
+            Lambda['config']['tracing'] = {}
         ordered = OrderedDict(sorted(Lambda['config'].items(),
                                      key=lambda x: str(x[1])))
         upldr_config = namedtuple('config', ordered.keys())(**ordered)
