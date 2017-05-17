@@ -40,8 +40,16 @@ def wait_for_container_to_finish(container):
             basepath,
             'container_{}.log'.format(container.short_id),
         )
+        log_contents = container.logs(stdout=True, stderr=True)
         with open(log_filename, 'w') as fp:
-            fp.write(container.logs(stdout=True, stderr=True))
+            try:
+                fp.write(log_contents)
+            except TypeError:
+                # On Python 3, `fp.write()` expects a string instead of bytes
+                # (which is coming out of the `logs()` call), but Python 2
+                # can't handle writing unicode to a file, so we can't do this
+                # in both cases.
+                fp.write(log_contents.decode('utf-8'))
 
         raise Exception(
             "Container exited with non-zero code. Logs saved to {}".format(
