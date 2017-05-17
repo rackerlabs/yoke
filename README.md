@@ -51,6 +51,9 @@ The heart of Yoke is the `yoke.yml` file. This file tells Yoke all the necessary
     * `ignore`: A list of regex patterns of files to exclude when building and uploading the function.
     * `role`: The IAM role to assume when this function is run.
     * `runtime`: Lambda Runtime (default: `python2.7`).
+    * `vpc`: Optional VPC configuration, when specified, both keys below are required (also make sure that [permissions are set up accordingly](http://docs.aws.amazon.com/lambda/latest/dg/vpc-ec-create-iam-role.html)):
+      * `subnets`: List of subnets the Lambda function should run inside
+      * `security_groups`: List of security groups the Lambda function should assume
   * `path`: The path to the root of your Lambda module.
   * `extraFiles`: A list of additional files or directories to include in the Lambda package when uploading. This is useful for including requirements using `pip install -t <requirements_directory> <somepackage>`.
   * `dependencies`: Optional information about dependencies of the function:

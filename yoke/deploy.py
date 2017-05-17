@@ -13,9 +13,9 @@ from lambda_uploader import package, uploader
 from retrying import retry
 import ruamel.yaml as yaml
 
-from build_deps import PythonDependencyBuilder
-import templates
-import utils
+from .build_deps import PythonDependencyBuilder
+from . import templates
+from . import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -122,8 +122,9 @@ class Deployment(object):
         Lambda['config']['runtime'] = Lambda['config'].get('runtime',
                                                            'python2.7')
         Lambda['config']['variables'] = {}
+        Lambda['config']['raw'] = {'vpc': Lambda['config'].get('vpc')}
         ordered = OrderedDict(sorted(Lambda['config'].items(),
-                                     key=lambda x: x[1]))
+                                     key=lambda x: str(x[1])))
         upldr_config = namedtuple('config', ordered.keys())(**ordered)
         return upldr_config
 
@@ -254,7 +255,6 @@ class Deployment(object):
         LOG.warning("Uploading Lambda %s to AWS Account %s "
                     "for region %s ...",
                     upldr_config.name, self.account_id, upldr_config.region)
-        uploader.PackageUploader._format_vpc_config = self._format_vpc_config
         upldr = uploader.PackageUploader(upldr_config, None)
         upldr.upload(pkg)
         upldr.alias()
@@ -267,8 +267,8 @@ class Deployment(object):
             aws_account_id = boto3.client('iam').get_user()[
                 'User']['Arn'].split(':')[4]
         except ClientError:
-            aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
-                'Users'][0]['Arn'].split(':')[4]
+            aws_account_id = boto3.client('sts').get_caller_identity()[
+                'Account']
         try:
             assert aws_account_id == self.account_id
         except Exception:
@@ -317,11 +317,3 @@ class Deployment(object):
         self.write_template(deref, filename='swagger.json')
 
         return deref
-
-    def _format_vpc_config(self):
-
-        # todo(ryandub): Add VPC support
-        return {
-            'SecurityGroupIds': [],
-            'SubnetIds': [],
-        }

@@ -6,7 +6,7 @@ import os
 import re
 import ruamel.yaml as yaml
 
-import utils
+from . import utils
 
 LOG = logging.getLogger(__name__)
 LAMBDA_ROLE_ARN_TEMPLATE = "arn:aws:iam::{account_id}:role/{role}"
@@ -43,7 +43,7 @@ class YokeConfig(object):
         if 'config' not in config['stages'][self.stage]:
             config['stages'][self.stage]['config'] = {}
 
-        if self._args.func.func_name not in ['encrypt', 'decrypt']:
+        if self._args.func.__name__ not in ['encrypt', 'decrypt']:
             if (config['stages'][self.stage].get('secret_config') or
                     config['stages'][self.stage].get('secretConfig')):
                 dec_config = utils.decrypt(config)
@@ -82,8 +82,8 @@ class YokeConfig(object):
         except ClientError as exc:
             LOG.debug("Failed to get account via get_user()...\n %s",
                       str(exc))
-            aws_account_id = boto3.client('iam').list_users(MaxItems=1)[
-                'Users'][0]['Arn'].split(':')[4]
+            aws_account_id = boto3.client('sts').get_caller_identity()[
+                'Account']
 
         return str(aws_account_id)
 

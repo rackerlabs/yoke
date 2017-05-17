@@ -40,8 +40,16 @@ def wait_for_container_to_finish(container):
             basepath,
             'container_{}.log'.format(container.short_id),
         )
+        log_contents = container.logs(stdout=True, stderr=True)
         with open(log_filename, 'w') as fp:
-            fp.write(container.logs(stdout=True, stderr=True))
+            try:
+                fp.write(log_contents)
+            except TypeError:
+                # On Python 3, `fp.write()` expects a string instead of bytes
+                # (which is coming out of the `logs()` call), but Python 2
+                # can't handle writing unicode to a file, so we can't do this
+                # in both cases.
+                fp.write(log_contents.decode('utf-8'))
 
         raise Exception(
             "Container exited with non-zero code. Logs saved to {}".format(
@@ -116,7 +124,7 @@ class PythonDependencyBuilder(object):
 
         requirements_file = os.path.join(self.lambda_path, 'requirements.txt')
         with open(requirements_file, 'r') as fp:
-            calculated_sha1sum = sha1(fp.read()).hexdigest()
+            calculated_sha1sum = sha1(fp.read().encode('utf-8')).hexdigest()
 
         if sha1sum != calculated_sha1sum:
             LOG.warning("SHA1 mismatch, rebuilding dependencies.")
@@ -200,7 +208,7 @@ class PythonDependencyBuilder(object):
         with open(filename, 'w') as fp:
             fp.write(contents)
 
-        os.chmod(filename, 0755)
+        os.chmod(filename, 0o755)
         return filename
 
     def generate_build_script(self):
