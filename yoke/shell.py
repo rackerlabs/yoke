@@ -11,19 +11,7 @@ LOG = logging.getLogger(__name__)
 
 
 def build(args):
-    LOG.warning('Building deployment only ...')
-    deployment = deploy.Deployment(args.config)
-    deployment.write_lambda_json()
-    deployment.write_lambda_config()
-    if args.config.get('apiGateway'):
-        template = deployment.render_swagger()
-        swagger_file = deployment.write_template(template)
-        # Also write the deref'd JSON version
-        deployment.deref(template)
-        LOG.warning('API Gateway Swagger file written to {}'.format(
-                    swagger_file))
-
-    deployment.build_lambda_package()
+    deploy.build(args.config)
 
 
 def decrypt(args):
@@ -31,11 +19,7 @@ def decrypt(args):
 
 
 def deploy_app(args):
-    deployment = deploy.Deployment(args.config)
-    deployment.deploy_lambda()
-    if args.config.get('apiGateway'):
-        deployment.deploy_api()
-    LOG.warning('Deployment complete!')
+    deploy.deploy_app(args.config)
 
 
 def encrypt(args):
