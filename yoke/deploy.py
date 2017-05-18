@@ -22,6 +22,30 @@ LOG = logging.getLogger(__name__)
 API_GATEWAY_URL_TEMPLATE = "https://{}.execute-api.{}.amazonaws.com/{}"
 
 
+def build(config):
+    LOG.warning('Building deployment only ...')
+    deployment = Deployment(config)
+    deployment.write_lambda_json()
+    deployment.write_lambda_config()
+    if config.get('apiGateway'):
+        template = deployment.render_swagger()
+        swagger_file = deployment.write_template(template)
+        # Also write the deref'd JSON version
+        deployment.deref(template)
+        LOG.warning('API Gateway Swagger file written to {}'.format(
+                    swagger_file))
+
+    deployment.build_lambda_package()
+
+
+def deploy_app(config):
+    deployment = Deployment(config)
+    deployment.deploy_lambda()
+    if config.get('apiGateway'):
+        deployment.deploy_api()
+    LOG.warning('Deployment complete!')
+
+
 class Deployment(object):
 
     def __init__(self, config):
