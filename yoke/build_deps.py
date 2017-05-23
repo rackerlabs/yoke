@@ -134,15 +134,18 @@ class PythonDependencyBuilder(object):
             return False
 
     def build(self):
-        if not self.should_rebuild():
-            return
-
         try:
             # Allow connecting to older Docker versions (e.g. CircleCI 1.0)
             client = docker.from_env(version='auto')
         except:
             LOG.error("Docker is not running, or it's outdated.")
             raise
+
+        if not self.should_rebuild():
+            # Even if we don't have to rebuild the dependencies, we still have
+            # to install them, so that they can be picked up into the bundle.
+            self._install_dependencies(client)
+            return
 
         # Build dependencies
         build_script_path = self.generate_build_script()
@@ -171,11 +174,13 @@ class PythonDependencyBuilder(object):
         finally:
             os.remove(build_script_path)
 
-        # Install dependencies
+        self._install_dependencies(client)
+
+    def _install_dependencies(self, docker_client):
         install_script_path = self.generate_install_script()
         try:
             project_path = os.path.dirname(self.lambda_path)
-            container = client.containers.run(
+            container = docker_client.containers.run(
                 image=BUILD_IMAGE,
                 command='/bin/bash -c "./install_wheels.sh"',
                 detach=True,
