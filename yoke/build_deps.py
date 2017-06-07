@@ -186,6 +186,7 @@ class PythonDependencyBuilder(object):
                 volumes={
                     self.wheelhouse_path: {'bind': '/wheelhouse'},
                     project_path: {'bind': '/src'},
+                    self.lambda_path: {'bind': '/lambda'},
                     install_script_path: {'bind': '/install_wheels.sh'},
                 },
             )
