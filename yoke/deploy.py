@@ -53,8 +53,8 @@ class Deployment(object):
         self.project_dir = self.config['project_dir']
         self.stage = config['stage']
         self.region = self.config['stages'][self.stage]['region']
-        self.lambda_path = os.path.join(self.project_dir,
-                                        self.config['Lambda']['path'])
+        self.lambda_path = os.path.abspath(os.path.join(self.project_dir,
+                                           self.config['Lambda']['path']))
         self.account_id = config['account_id']
         self.extra_files = self.normalize_extra_files(config['Lambda'])
         # Let's make sure the accounts match up

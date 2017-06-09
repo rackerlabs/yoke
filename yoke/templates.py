@@ -181,5 +181,5 @@ ${PYBIN}/pip install -t /src/${INSTALL_DIR} \\
     --no-compile \\
     --no-index \\
     --find-links /wheelhouse \\
-    -r /src/lambda/requirements.txt
+    -r /lambda/requirements.txt
 """
