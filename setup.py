@@ -11,7 +11,8 @@ INSTALL_REQUIRES = [
     'jsonref>=0.1',
     'lambda-uploader>=1.2.0',
     'retrying>=1.3.3',
-    'ruamel.yaml>=0.11.11'
+    'ruamel.yaml>=0.11.11',
+    'six>=1.10.0',
 ]
 
 
