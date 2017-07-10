@@ -97,7 +97,8 @@ def main(arv=None):
         else:
             env_dict = {}
         _cfg = config.YokeConfig(args, args.project_dir, args.stage, env_dict)
-        args.config = _cfg.get_config()
+        skip_decrypt = args.func.__name__ in ('encrypt', 'decrypt')
+        args.config = _cfg.get_config(skip_decrypt=skip_decrypt)
         args.func(args)
     except Exception:
         LOG.exception('ERROR!')
