@@ -32,7 +32,7 @@ class YokeConfig(object):
         config['stage'] = self.stage
         return config
 
-    def get_config(self):
+    def get_config(self, skip_decrypt=False):
         config = self.load_config_file()
         stage = self.get_stage(self.stage, config)
         config = self.check_default_stage(config, stage)
@@ -43,7 +43,7 @@ class YokeConfig(object):
         if 'config' not in config['stages'][self.stage]:
             config['stages'][self.stage]['config'] = {}
 
-        if self._args.func.__name__ not in ['encrypt', 'decrypt']:
+        if not skip_decrypt:
             if (config['stages'][self.stage].get('secret_config') or
                     config['stages'][self.stage].get('secretConfig')):
                 dec_config = utils.decrypt(config)

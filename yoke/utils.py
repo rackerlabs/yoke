@@ -4,6 +4,7 @@ import logging
 
 import boto3
 import ruamel.yaml as yaml
+from six import string_types
 
 LOG = logging.getLogger(__name__)
 
@@ -20,14 +21,14 @@ def decrypt(config, output=False):
     check_encryption_required_fields(config['stages'][stage])
 
     enc_config = get_secret_config(config, stage)
-    if not isinstance(enc_config, basestring):
+    if not isinstance(enc_config, string_types):
         raise Exception('Secret config for stage {} is not a '
                         'string! Did you forget to encrypt '
                         'first?'.format(stage))
     stage_cfg = base64.b64decode(enc_config)
     region = config['stages'][stage]['keyRegion']
     kms = boto3.client('kms', region_name=region)
-    resp = kms.decrypt(CiphertextBlob=bytes(stage_cfg))
+    resp = kms.decrypt(CiphertextBlob=stage_cfg)
     plain = json.loads(resp['Plaintext'])
     if output:
         print('Decrypted config for stage {}:\n\n{}'.format(
@@ -43,11 +44,11 @@ def encrypt(config, output=False):
     kms = boto3.client('kms', region_name=stage['keyRegion'])
     key_name = 'alias/{}'.format(stage['keyName'])
     resp = kms.encrypt(KeyId=key_name,
-                       Plaintext=bytes(json.dumps(secret_config)))
+                       Plaintext=json.dumps(secret_config).encode('utf-8'))
     if output:
         print('Encrypted config for stage {}:\nsecretConfig: "{}"\n'.format(
             config['stage'],
-            base64.b64encode(resp['CiphertextBlob'])))
+            base64.b64encode(resp['CiphertextBlob']).decode('utf-8')))
 
 
 def format_env(env_list):
