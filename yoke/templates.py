@@ -147,23 +147,82 @@ DOCKER_BUILD_SCRIPT = """\
 
 set -e -x
 
-# cryptography needs libffi-devel and openssl-devel, also install extra build
-# dependencies.
-yum install -y libffi-devel openssl-devel ${EXTRA_PACKAGES}
+OPENSSL_VERSION="1.0.2l"
+LIBFFI_VERSION="3.2.1"
+LIBXML_VERSION="2.9.2"
+LIBXSLT_VERSION="1.1.29"
+
+# Some commonly used dependencies (cryptography, lxml, etc.) require newer
+# versions of certain libraries that aren't available for CentOS 5, which is
+# the base distro of the Docker image used for building Python packages. Let's
+# install these from source, when requested.
+yum install -y libtool texinfo
+
+# Symlink all the existing autoconf macros into the installed tool's directory
+for MACRO in `ls /usr/share/aclocal`; do
+    ln -s /usr/share/aclocal/${MACRO} /usr/local/share/aclocal/${MACRO}
+done
+
+# Build source libxml2 and libxslt RPMs
+if [[ "${BUILD_LIBXML}" == "1" ]]; then
+    yum install -y rpm-build python-devel libgcrypt-devel xz-devel zlib-devel
+    curl -O http://xmlsoft.org/sources/libxml2-${LIBXML_VERSION}-1.fc19.src.rpm
+    rpm -ivh libxml2-${LIBXML_VERSION}-1.fc19.src.rpm --nomd5
+    rpmbuild -ba /usr/src/redhat/SPECS/libxml2.spec
+    rpm -ivh --force /usr/src/redhat/RPMS/x86_64/libxml2-${LIBXML_VERSION}-1.x86_64.rpm
+    rpm -ivh --force /usr/src/redhat/RPMS/x86_64/libxml2-devel-${LIBXML_VERSION}-1.x86_64.rpm
+    rpm -ivh --force /usr/src/redhat/RPMS/x86_64/libxml2-python-${LIBXML_VERSION}-1.x86_64.rpm
+    curl -O http://xmlsoft.org/sources/libxslt-${LIBXSLT_VERSION}-1.fc23.src.rpm
+    rpm -ivh libxslt-${LIBXSLT_VERSION}-1.fc23.src.rpm --nomd5
+    rpmbuild -ba /usr/src/redhat/SPECS/libxslt.spec
+    rpm -ivh --force /usr/src/redhat/RPMS/x86_64/libxslt-${LIBXSLT_VERSION}-1.x86_64.rpm
+    rpm -ivh --force /usr/src/redhat/RPMS/x86_64/libxslt-devel-${LIBXSLT_VERSION}-1.x86_64.rpm
+fi
+
+# Build OpenSSL from source
+if [[ "${BUILD_OPENSSL}" == "1" ]]; then
+    curl -O https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+    tar xf openssl-${OPENSSL_VERSION}.tar.gz
+    cd openssl-${OPENSSL_VERSION}
+    ./config no-shared no-ssl2 -fPIC --prefix=/openssl
+    make && make install
+    cd ..
+    export CFLAGS="${CFLAGS} -I/openssl/include"
+    export LDFLAGS="${LDFLAGS} -L/openssl/lib"
+fi
+
+# Build libffi from source
+if [[ "${BUILD_LIBFFI}" == "1" ]]; then
+    curl -L -o libffi-${LIBFFI_VERSION}.tar.gz https://github.com/libffi/libffi/archive/v${LIBFFI_VERSION}.tar.gz
+    tar xf libffi-${LIBFFI_VERSION}.tar.gz
+    cd libffi-${LIBFFI_VERSION}
+    ./autogen.sh
+    ./configure --prefix=/libffi
+    make && make install
+    cd ..
+    export CFLAGS="${CFLAGS} -I/libffi/lib/libffi-${LIBFFI_VERSION}/include"
+    export LDFLAGS="${LDFLAGS} -L/libffi/lib64"
+    export LD_LIBRARY_PATH="/libffi/lib64"
+fi
+
+# Install extra build dependencies, if specified
+if [ -n "${EXTRA_PACKAGES}" ]; then
+    yum install -y ${EXTRA_PACKAGES}
+fi
 
 PYBIN="/opt/python/${PY_VERSION}/bin"
 
-# Enable compiling against OpenSSL 0.9.8
-CRYPTOGRAPHY_ALLOW_OPENSSL_098="true"
-
 ${PYBIN}/pip wheel --no-binary :all: -w /wheelhouse -r /src/requirements.txt
 
+# Make sure we're using the latest version of auditwheel
+/opt/python/cp36-cp36m/bin/pip install -U auditwheel
 # We only want to repair platform wheels that were compiled - not universal
 # wheels.
 find /wheelhouse -type f \\
     -name "*.whl" \\
     -not -name "*none-any.whl" \\
-    -exec auditwheel repair {} -w /wheelhouse/ \;
+    -exec auditwheel repair {} -w /wheelhouse/ \; \\
+    -exec rm {} \;
 
 # Provide SHA1-sum file that we can check against to see if dependencies should
 # be rebuilt.
@@ -173,7 +232,11 @@ sha1sum /src/requirements.txt | cut -d " " -f 1 > /wheelhouse/sha1sum
 DOCKER_INSTALL_SCRIPT = """\
 #!/bin/bash
 
-set -e -x
+set -e -x -u
+
+# First make sure that the target directory is clean, this way we can avoid
+# the contamination of Lambda packages when building locally.
+rm -rf /src/${INSTALL_DIR}
 
 PYBIN="/opt/python/${PY_VERSION}/bin"
 

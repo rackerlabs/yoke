@@ -59,8 +59,11 @@ The heart of Yoke is the `yoke.yml` file. This file tells Yoke all the necessary
   * `dependencies`: Optional information about dependencies of the function:
     * `build`: If set to `true`, the Python dependencies listed in the Lambda function's `requirements.txt` file will be built and packaged with the function (default: `false`).
     * `wheelhouse`: The path to the directory where the dependency packages will be stored (in wheel format, default: `../../wheelhouse`).
-    * `install_dir`: The path to the directory where the dependencies will be installed (should be added to `extraFiles` above as well, otherwise they won't be included in the Lambda package, default: `./lib`).
-    * `packages`: List of CentOS package names that should be installed before the dependencies are built. The following packages are installed regardless of what is provided here: `libffi-devel` and `openssl-devel`. Default: no additional packages.
+    * `install_dir`: The path to the directory where the dependencies will be installed (should be added to `extraFiles` above as well, otherwise they won't be included in the Lambda package, default: `./lib`). Be careful, because this directory, and all its contents are removed before every build.
+    * `packages`: List of CentOS package names that should be installed before the dependencies are built. Default: no additional packages.
+    * `openssl`: Enable building a newer version of OpenSSL (the build image has 0.9.8, which isn't supported anymore), currently `1.0.2l`. Default: `false`.
+    * `libffi`: Enable building a newer version of [libffi](https://sourceware.org/libffi/), currently `3.2.1`. Default: `false`.
+    * `libxml`: Enable building a newer version of libxml2 and libxlst, currently `2.9.2` and `1.1.29`. Default: `false`.
 * `apiGateway`: Optional - information about API Gateway configuration.
   * `name`: The name of the API Gateway.
   * `swaggerTemplate`: Path to the Swagger template file.

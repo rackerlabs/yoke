@@ -125,6 +125,9 @@ class Deployment(object):
                     install_dir=install_dir,
                     service_name=service_name,
                     extra_packages=dependency_config.get('packages'),
+                    build_openssl=dependency_config.get('openssl', False),
+                    build_libffi=dependency_config.get('libffi', False),
+                    build_libxml=dependency_config.get('libxml', False),
                 )
                 builder.build()
 
