@@ -72,7 +72,8 @@ def remove_container(container):
 class PythonDependencyBuilder(object):
 
     def __init__(self, runtime, project_path, wheelhouse_path, lambda_path,
-                 install_dir, service_name, extra_packages=None):
+                 install_dir, service_name, extra_packages=None,
+                 build_openssl=False, build_libffi=False, build_libxml=False):
         """Initialize dependency builder object.
 
         :param runtime: Lambda Python runtime version.
@@ -96,6 +97,9 @@ class PythonDependencyBuilder(object):
         self.install_dir = install_dir
         self.service_name = service_name
         self.extra_packages = extra_packages or []
+        self.build_openssl = build_openssl
+        self.build_libffi = build_libffi
+        self.build_libxml = build_libxml
 
     def should_rebuild(self):
         # There's a way to force rebuilding of dependencies
@@ -155,6 +159,9 @@ class PythonDependencyBuilder(object):
                 command='/bin/bash -c "./build_wheels.sh"',
                 detach=True,
                 environment={
+                    'BUILD_OPENSSL': '1' if self.build_openssl else '0',
+                    'BUILD_LIBFFI': '1' if self.build_libffi else '0',
+                    'BUILD_LIBXML': '1' if self.build_libxml else '0',
                     'EXTRA_PACKAGES': ' '.join(self.extra_packages),
                     'PY_VERSION': PYTHON_VERSION_MAP[self.runtime],
                 },
