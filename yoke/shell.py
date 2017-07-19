@@ -14,6 +14,10 @@ def build(args):
     deploy.build(args.config)
 
 
+def build_dependencies(args):
+    deploy.build_dependencies(args.config)
+
+
 def decrypt(args):
     utils.decrypt(args.config, output=True)
 
@@ -65,7 +69,24 @@ def main(arv=None):
                               help='Project directory containing yoke.yml')
     build_parser.set_defaults(func=build)
 
-    decrypt_parser = subparsers.add_parser('decrypt')
+    build_dependencies_parser = subparsers.add_parser(
+        'build-dependencies',
+        help='Build service dependencies.')
+    build_dependencies_parser.add_argument(
+        '--environment', '-e', dest='environment',
+        help='Extra config values for lambda config - can be used multiple '
+             'times',
+        default=[], action='append',
+        metavar='KEYNAME=VALUE')
+    build_dependencies_parser.add_argument(
+        'project_dir', default=os.getcwd(),
+        nargs='?',
+        help='Project directory containing yoke.yml')
+    build_dependencies_parser.set_defaults(func=build_dependencies)
+
+    decrypt_parser = subparsers.add_parser(
+        'decrypt',
+        help='Decrypt secrets stored in yoke.yml.')
     decrypt_parser.add_argument('--stage', dest='stage',
                                 help='Stage to decrypt',
                                 default=os.getenv('YOKE_STAGE'))
@@ -73,7 +94,9 @@ def main(arv=None):
                                 help='Project directory containing yoke.yml')
     decrypt_parser.set_defaults(func=decrypt)
 
-    encrypt_parser = subparsers.add_parser('encrypt')
+    encrypt_parser = subparsers.add_parser(
+        'encrypt',
+        help='Encrypt secrets just added in plain-text to yoke.yml')
     encrypt_parser.add_argument('--stage', dest='stage',
                                 help='Stage to encrypt',
                                 default=os.getenv('YOKE_STAGE'))
@@ -96,8 +119,17 @@ def main(arv=None):
             env_dict = utils.format_env(args.environment)
         else:
             env_dict = {}
+        # Some commands (currently: build-dependencies) don't require a stage
+        # to work, so let's just fake one here to make sure things continue to
+        # work.
+        if not hasattr(args, 'stage'):
+            args.stage = 'nostage'
         _cfg = config.YokeConfig(args, args.project_dir, args.stage, env_dict)
-        skip_decrypt = args.func.__name__ in ('encrypt', 'decrypt')
+        skip_decrypt = args.func.__name__ in (
+            'build_dependencies',
+            'encrypt',
+            'decrypt',
+        )
         args.config = _cfg.get_config(skip_decrypt=skip_decrypt)
         args.func(args)
     except Exception:
