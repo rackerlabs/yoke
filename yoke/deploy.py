@@ -38,6 +38,12 @@ def build(config):
     deployment.build_lambda_package()
 
 
+def build_dependencies(config):
+    LOG.warning('Building dependencies only ...')
+    deployment = Deployment(config)
+    deployment.build_dependencies()
+
+
 def deploy_app(config):
     deployment = Deployment(config)
     deployment.deploy_lambda()
@@ -71,26 +77,18 @@ class Deployment(object):
                             _config['x-yoke-integration'])
         return template
 
-    def build_lambda_package(self, skip_if_exists=False):
-        LOG.warning("Building Lambda package ...")
-        pkg = package.Package(self.lambda_path)
-        pkg._requirements_file = None
-        if os.path.isfile(pkg.zip_file):
-            if skip_if_exists:
-                # Package already built, don't do anything else
-                LOG.warning(
-                    "Lambda package already built, using existing file.")
-                return pkg
-            else:
-                # Otherwise we should delete the existing file, otherwise it
-                # will be packaged up.
-                LOG.warning("Removing existing Lambda package.")
-                os.remove(pkg.zip_file)
-
+    def build_dependencies(self):
         dependency_config = self.config['Lambda'].get('dependencies')
-        if dependency_config is not None:
+        if dependency_config is None:
+            LOG.warning(
+                "The 'dependencies' section in the 'Lambda' config does not "
+                "exist, skipping the build of dependencies.")
+        else:
             build_enabled = dependency_config.get('build', False)
-            if build_enabled:
+            if not build_enabled:
+                LOG.warning(
+                    "Builds are not enabled for dependencies in the config.")
+            else:
                 LOG.warning("Building dependencies enabled ...")
                 runtime = self.config['Lambda']['config'].get(
                     'runtime', 'python2.7')
@@ -130,6 +128,28 @@ class Deployment(object):
                     build_libxml=dependency_config.get('libxml', False),
                 )
                 builder.build()
+
+    def build_lambda_package(self, skip_if_exists=False):
+        LOG.warning("Building Lambda package ...")
+        pkg = package.Package(self.lambda_path)
+        pkg._requirements_file = None
+        if os.path.isfile(pkg.zip_file):
+            if skip_if_exists:
+                # Package already built, don't do anything else
+                LOG.warning(
+                    "Lambda package already built, using existing file.")
+                return pkg
+            else:
+                # Otherwise we should delete the existing file, otherwise it
+                # will be packaged up.
+                LOG.warning("Removing existing Lambda package.")
+                os.remove(pkg.zip_file)
+
+        # Leaving this here for backward-compatibility reasons. More recent
+        # versions of Yoke might want to call the `build-dependencies` command
+        # separately. If that's the case, this code below will not do too much,
+        # because the built packages already exist and are up-to-date.
+        self.build_dependencies()
 
         if self.extra_files:
             for _file in self.extra_files:
