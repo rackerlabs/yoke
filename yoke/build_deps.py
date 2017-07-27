@@ -14,6 +14,7 @@ LOG = logging.getLogger(__name__)
 
 BUILD_IMAGE = "quay.io/pypa/manylinux1_x86_64"
 CONTAINER_POLL_INTERVAL = 10
+FEEDBACK_IN_SECONDS = 60
 PYTHON_VERSION_MAP = {
     # cp27-mu is compiled with ucs4 support which is the same as Lambda
     'python2.7': 'cp27-cp27mu',
@@ -23,8 +24,16 @@ STATUS_EXITED = 'exited'
 
 
 def wait_for_container_to_finish(container):
+    elapsed = 0
     while container.status != STATUS_EXITED:
         time.sleep(CONTAINER_POLL_INTERVAL)
+        # Make sure we give some feedback to the user, that things are actually
+        # happening in the background. Also, some CI systems detect the lack of
+        # output as a build failure, which we'd like to avoid.
+        elapsed += CONTAINER_POLL_INTERVAL
+        if elapsed % FEEDBACK_IN_SECONDS == 0:
+            LOG.warning("Container still running, please be patient...")
+
         container.reload()
 
     exit_code = container.attrs['State']['ExitCode']
