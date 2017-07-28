@@ -212,6 +212,9 @@ fi
 
 PYBIN="/opt/python/${PY_VERSION}/bin"
 
+# Make sure we're using the latest version of setuptools
+${PYBIN}/pip install -U setuptools
+
 ${PYBIN}/pip wheel --no-binary :all: -w /wheelhouse -r /src/requirements.txt
 
 # Make sure we're using the latest version of auditwheel
