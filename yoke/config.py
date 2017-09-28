@@ -29,6 +29,10 @@ class YokeConfig(object):
             if not config['stages'][self.stage].get('config'):
                 config['stages'][stage]['config'] = {}
             stage = self.stage
+        # If a stage was matched via regex, we need to insert it into the
+        # config with the provided stage name.
+        elif stage.startswith('/') and stage.endswith('/'):
+            config['stages'][self.stage] = config['stages'][stage]
         config['stage'] = self.stage
         return config
 
@@ -59,19 +63,39 @@ class YokeConfig(object):
         )
 
         LOG.info('Config:\n%s', json.dumps(config, indent=4))
-
         return config
 
     def get_stage(self, stage, config):
         assert stage, "No YOKE_STAGE envvar found - aborting!"
         LOG.warning("Loading stage %s ...", stage)
-        if not config['stages'].get(stage):
+
+        # First - see if the stage is explicitly defined.
+        if stage in config['stages']:
+            return stage
+
+        # Try to match the provided stage name against stages in yoke.yml
+        # and allow regex matching in yoke.yml stages. If more than one
+        # match, warn and exit.
+        found_stages = []
+        for stg in config['stages'].keys():
+            if stg.endswith('/') and stg.startswith('/'):
+                if re.match(stg.strip('/'), stage):
+                    found_stages.append(stg)
+
+        if found_stages:
+            if len(found_stages) > 1:
+                # We have multiple matches, return first match.
+                raise Exception('Provided stage matched more '
+                                'than one config - %s' % found_stages)
+            stage = found_stages[0]
+        else:
             if not config['stages'].get('default'):
                 LOG.warning('%s stage was not found and no default '
                             'stage was provided - aborting!', stage)
                 raise
             LOG.warning("%s stage was not found - using default ...", stage)
             stage = 'default'
+
         return stage
 
     def get_account_id(self):
