@@ -62,7 +62,9 @@ class Deployment(object):
         self.lambda_path = os.path.abspath(os.path.join(self.project_dir,
                                            self.config['Lambda']['path']))
         self.account_id = config['account_id']
-        self.extra_files = self.normalize_extra_files(config['Lambda'])
+        self.extra_files = self.normalize_files('extraFiles', config['Lambda'])
+        self.ignore = self.normalize_files('ignore',
+                                           config['Lambda']['config'])
         # Let's make sure the accounts match up
         self.verify_account_id()
 
@@ -155,7 +157,7 @@ class Deployment(object):
             for _file in self.extra_files:
                 pkg.extra_file(_file)
         pkg._prepare_workspace()
-        pkg.package()
+        pkg.package(self.ignore)
         pkg.clean_workspace()
         return pkg
 
@@ -213,11 +215,11 @@ class Deployment(object):
                                                     self.stage))
         return deployment
 
-    def normalize_extra_files(self, lambda_config):
+    def normalize_files(self, key, lambda_config):
         normalized = []
-        extra_files = lambda_config.get('extraFiles', [])
-        for extra_file in extra_files:
-            normalized.append(os.path.join(self.project_dir, extra_file))
+        files = lambda_config.get(key, [])
+        for a_file in files:
+            normalized.append(os.path.join(self.project_dir, a_file))
         return normalized
 
     def render_swagger(self):
