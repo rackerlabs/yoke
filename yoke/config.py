@@ -9,7 +9,7 @@ import ruamel.yaml as yaml
 from . import utils
 
 LOG = logging.getLogger(__name__)
-LAMBDA_ROLE_ARN_TEMPLATE = "arn:aws:iam::{account_id}:role/{role}"
+LAMBDA_ROLE_TEMPLATE = "arn:aws:iam::{account_id}:role/{role}"
 
 
 class YokeConfig(object):
@@ -57,10 +57,11 @@ class YokeConfig(object):
             config['stages'][self.stage]['config'].update(self.env_dict)
 
         # Set proper Lambda ARN for role
-        config['Lambda']['config']['role'] = LAMBDA_ROLE_ARN_TEMPLATE.format(
-            account_id=config['account_id'],
-            role=config['Lambda']['config']['role']
-        )
+        if config['Lambda']['config'].get('role'):
+            config['Lambda']['config']['role'] = LAMBDA_ROLE_TEMPLATE.format(
+                account_id=config['account_id'],
+                role=config['Lambda']['config']['role']
+            )
 
         LOG.info('Config:\n%s', json.dumps(config, indent=4))
         return config
