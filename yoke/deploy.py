@@ -66,7 +66,8 @@ class Deployment(object):
         self.ignore = self.normalize_files('ignore',
                                            config['Lambda']['config'])
         # Let's make sure the accounts match up
-        self.verify_account_id()
+        if config['account_id']:
+            self.verify_account_id()
 
     def apply_templates(self, template):
         aws_int = 'x-amazon-apigateway-integration'
@@ -100,34 +101,39 @@ class Deployment(object):
                         "runtimes."
                     )
                 service_name = self.config['Lambda']['config']['name']
-                wheelhouse_path = dependency_config.get('wheelhouse')
-                if wheelhouse_path is not None:
-                    wheelhouse_path = os.path.abspath(
+                deps_cache_path = dependency_config.get('dependency_cache')
+                if deps_cache_path is not None:
+                    deps_cache_path = os.path.abspath(
                         os.path.join(
-                            wheelhouse_path,
+                            deps_cache_path,
                             service_name,
                         ),
                     )
                 else:
-                    wheelhouse_path = os.path.abspath(
+                    deps_cache_path = os.path.abspath(
                         os.path.join(
-                            self.project_dir,
-                            '../../wheelhouse',
+                            os.path.expanduser('~'),
+                            '.yoke',
+                            'dependencies',
                             service_name,
                         ),
                     )
-                install_dir = dependency_config.get('install_dir') or './lib'
+
+                install_dir = os.path.abspath(
+                    os.path.join(
+                        self.project_dir,
+                        dependency_config.get('install_dir', './dist'),
+                    ),
+                )
+
                 builder = PythonDependencyBuilder(
                     runtime=runtime,
                     project_path=self.project_dir,
-                    wheelhouse_path=wheelhouse_path,
+                    deps_cache_path=deps_cache_path,
                     lambda_path=self.lambda_path,
                     install_dir=install_dir,
                     service_name=service_name,
                     extra_packages=dependency_config.get('packages'),
-                    build_openssl=dependency_config.get('openssl', False),
-                    build_libffi=dependency_config.get('libffi', False),
-                    build_libxml=dependency_config.get('libxml', False),
                 )
                 builder.build()
 
