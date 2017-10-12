@@ -36,13 +36,16 @@ class YokeConfig(object):
         config['stage'] = self.stage
         return config
 
-    def get_config(self, skip_decrypt=False):
+    def get_config(self, skip_decrypt=False, skip_get_account=False):
         config = self.load_config_file()
         stage = self.get_stage(self.stage, config)
         config = self.check_default_stage(config, stage)
 
         config['project_dir'] = self.project_dir
-        config['account_id'] = self.get_account_id()
+        if skip_get_account:
+            config['account_id'] = None
+        else:
+            config['account_id'] = self.get_account_id()
 
         if 'config' not in config['stages'][self.stage]:
             config['stages'][self.stage]['config'] = {}

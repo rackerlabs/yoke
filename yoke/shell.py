@@ -130,7 +130,11 @@ def main(arv=None):
             'encrypt',
             'decrypt',
         )
-        args.config = _cfg.get_config(skip_decrypt=skip_decrypt)
+        skip_get_account = args.func.__name__ in (
+            'build_dependencies',
+        )
+        args.config = _cfg.get_config(skip_decrypt=skip_decrypt,
+                                      skip_get_account=skip_get_account)
         args.func(args)
     except Exception:
         LOG.exception('ERROR!')
