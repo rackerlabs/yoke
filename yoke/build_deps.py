@@ -181,7 +181,14 @@ class PythonDependencyBuilder(object):
 
             self._package_deps(build_dir)
         finally:
-            shutil.rmtree(build_dir)
+            try:
+                shutil.rmtree(build_dir)
+            # CircleCI does not allow you to remove things in /tmp for some
+            # reason.
+            except OSError as exc:
+                LOG.warning("Failed to remove build directory - {}".format(
+                    build_dir))
+                LOG.debug(str(exc))
 
         self._install_dependencies(client)
 
