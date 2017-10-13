@@ -20,6 +20,10 @@ from . import utils
 LOG = logging.getLogger(__name__)
 
 API_GATEWAY_URL_TEMPLATE = "https://{}.execute-api.{}.amazonaws.com/{}"
+SUPPORTED_RUNTIMES = [
+    "python2.7",
+    "python3.6",
+]
 
 
 def build(config):
@@ -100,6 +104,13 @@ class Deployment(object):
                         "Building dependencies only supported on Python "
                         "runtimes."
                     )
+                if runtime not in SUPPORTED_RUNTIMES:
+                    raise Exception(
+                        "{} is not a supported runtime - please use one of the"
+                        " following: {}".format(
+                            runtime, ', '.join(SUPPORTED_RUNTIMES)
+                        )
+                    )
                 service_name = self.config['Lambda']['config']['name']
                 deps_cache_path = dependency_config.get('dependency_cache')
                 if deps_cache_path is not None:
@@ -127,7 +138,7 @@ class Deployment(object):
                 )
 
                 builder = PythonDependencyBuilder(
-                    runtime=runtime,
+                    runtime=runtime.replace('.', ''),
                     project_path=self.project_dir,
                     deps_cache_path=deps_cache_path,
                     lambda_path=self.lambda_path,

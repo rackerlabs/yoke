@@ -157,7 +157,10 @@ class PythonDependencyBuilder(object):
         image = client.images.build(
             fileobj=docker_file,
             tag='yokelambdabuilder',
-            buildargs={},
+            buildargs={
+                'python_version': self.runtime,
+                'deps': self.extra_packages,
+            },
         )
 
         # There is no context manager for mkdtemp in Python 2.7 :(
