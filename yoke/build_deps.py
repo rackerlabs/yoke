@@ -159,7 +159,7 @@ class PythonDependencyBuilder(object):
             tag='yokelambdabuilder',
             buildargs={
                 'python_version': self.runtime,
-                'deps': self.extra_packages,
+                'deps': ' '.join(self.extra_packages),
             },
         )
 
