@@ -160,7 +160,12 @@ yum install -y libtool texinfo
 
 # Symlink all the existing autoconf macros into the installed tool's directory
 for MACRO in `ls /usr/share/aclocal`; do
-    ln -s /usr/share/aclocal/${MACRO} /usr/local/share/aclocal/${MACRO}
+    # If the file already exists, don't try to symlink it:
+    if [[ ! -f /usr/local/share/aclocal/${MACRO} ]]; then
+        ln -s /usr/share/aclocal/${MACRO} /usr/local/share/aclocal/${MACRO}
+    else
+        echo "/usr/local/share/aclocal/${MACRO} already exists! Skipping symlink."
+    fi
 done
 
 # Build source libxml2 and libxslt RPMs
