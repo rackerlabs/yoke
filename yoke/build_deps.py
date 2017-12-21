@@ -69,7 +69,7 @@ def wait_for_container_to_finish(container):
 def remove_container(container):
     try:
         container.remove()
-    except:
+    except Exception:
         # We just log an error and swallow the exception, because this happens
         # often on CircleCI.
         LOG.error(
@@ -150,7 +150,7 @@ class PythonDependencyBuilder(object):
         try:
             # Allow connecting to older Docker versions (e.g. CircleCI 1.0)
             client = docker.from_env(version='auto')
-        except:
+        except Exception:
             LOG.error("Docker is not running, or it's outdated.")
             raise
 
