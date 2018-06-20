@@ -122,10 +122,10 @@ def setup_dependency_volumes(
     scripts_volume = docker_client.volumes.create()
     volume_container = create_volume_container(
                             volumes=[
-                                '{}:/wheelhouse'.format(wheelhouse_volume.name),
-                                '{}:/src'.format(project_volume.name),
-                                '{}:/lambda'.format(lambda_volume.name),
-                                '{}:/scripts'.format(scripts_volume.name)]
+                             '{}:/wheelhouse'.format(wheelhouse_volume.name),
+                             '{}:/src'.format(project_volume.name),
+                             '{}:/lambda'.format(lambda_volume.name),
+                             '{}:/scripts'.format(scripts_volume.name)]
     )
     put_files(volume_container, wheelhouse_path, '/wheelhouse')
     put_files(volume_container, project_path, '/src')
@@ -146,9 +146,9 @@ def setup_build_volumes(
     scripts_volume = docker_client.volumes.create()
     volume_container = create_volume_container(
                             volumes=[
-                                '{}:/wheelhouse'.format(wheelhouse_volume.name),
-                                '{}:/src'.format(lambda_volume.name),
-                                '{}:/scripts'.format(scripts_volume.name)]
+                               '{}:/wheelhouse'.format(wheelhouse_volume.name),
+                               '{}:/src'.format(lambda_volume.name),
+                               '{}:/scripts'.format(scripts_volume.name)]
     )
     if os.path.isdir(wheelhouse_path):
         put_files(volume_container, wheelhouse_path, '/wheelhouse')
@@ -317,7 +317,8 @@ class PythonDependencyBuilder(object):
                 container.short_id,
             )
             print "build step: lambda_path is {}".format(self.lambda_path)
-            print "build step: wheelhouse_path is {}".format(self.wheelhouse_path)
+            print "build step: wheelhouse_path is {}".format(
+                self.wheelhouse_path)
             wait_for_container_to_finish(container)
             LOG.warning("Build finished.")
             export_wheelhouse(container, self.wheelhouse_path)
@@ -373,7 +374,10 @@ class PythonDependencyBuilder(object):
             print "instal dir is {}".format(self.install_dir)
             wait_for_container_to_finish(container)
             LOG.warning("Install finished.")
-            export_installed_dependencies(container, self.install_dir, self.install_dir)
+            export_installed_dependencies(
+                container,
+                self.install_dir,
+                self.install_dir)
             # remove_container(container)
         finally:
             os.remove(install_script_path)
