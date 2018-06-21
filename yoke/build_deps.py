@@ -302,7 +302,7 @@ class PythonDependencyBuilder(object):
             wait_for_container_to_finish(container)
             LOG.warning("Build finished.")
             export_wheelhouse(container, self.wheelhouse_path)
-            # remove_container(container)
+            remove_container(container)
         finally:
             os.remove(build_script_path)
 
@@ -338,7 +338,7 @@ class PythonDependencyBuilder(object):
                 container,
                 self.install_dir,
                 self.install_dir)
-            # remove_container(container)
+            remove_container(container)
         finally:
             os.remove(install_script_path)
 
