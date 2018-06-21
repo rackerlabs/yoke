@@ -295,23 +295,6 @@ class PythonDependencyBuilder(object):
                 },
                 volumes_from=[volume_container.id],
             )
-            # container = client.containers.run(
-            #     image=BUILD_IMAGE,
-            #     command='/bin/bash -c "./build_wheels.sh"',
-            #     detach=True,
-            #     environment={
-            #         'BUILD_OPENSSL': '1' if self.build_openssl else '0',
-            #         'BUILD_LIBFFI': '1' if self.build_libffi else '0',
-            #         'BUILD_LIBXML': '1' if self.build_libxml else '0',
-            #         'EXTRA_PACKAGES': ' '.join(self.extra_packages),
-            #         'PY_VERSION': PYTHON_VERSION_MAP[self.runtime],
-            #     },
-            #     volumes={
-            #         self.wheelhouse_path: {'bind': '/wheelhouse'},
-            #         self.lambda_path: {'bind': '/src'},
-            #         build_script_path: {'bind': '/build_wheels.sh'},
-            #     },
-            # )
             LOG.warning(
                 "Build container started, waiting for completion (ID: %s)",
                 container.short_id,
@@ -345,21 +328,6 @@ class PythonDependencyBuilder(object):
                 },
                 volumes_from=[volume_container.id]
             )
-            # container = docker_client.containers.run(
-            #     image=BUILD_IMAGE,
-            #     command='/bin/bash -c "./install_wheels.sh"',
-            #     detach=True,
-            #     environment={
-            #         'INSTALL_DIR': self.install_dir,
-            #         'PY_VERSION': PYTHON_VERSION_MAP[self.runtime],
-            #     },
-            #     volumes={
-            #         self.wheelhouse_path: {'bind': '/wheelhouse'},
-            #         project_path: {'bind': '/src'},
-            #         self.lambda_path: {'bind': '/lambda'},
-            #         install_script_path: {'bind': '/install_wheels.sh'},
-            #     },
-            # )
             LOG.warning(
                 "Install container started, waiting for completion (ID: %s)",
                 container.short_id,
