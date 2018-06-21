@@ -316,9 +316,6 @@ class PythonDependencyBuilder(object):
                 "Build container started, waiting for completion (ID: %s)",
                 container.short_id,
             )
-            print "build step: lambda_path is {}".format(self.lambda_path)
-            print "build step: wheelhouse_path is {}".format(
-                self.wheelhouse_path)
             wait_for_container_to_finish(container)
             LOG.warning("Build finished.")
             export_wheelhouse(container, self.wheelhouse_path)
@@ -367,11 +364,6 @@ class PythonDependencyBuilder(object):
                 "Install container started, waiting for completion (ID: %s)",
                 container.short_id,
             )
-            print "wheelhouse path is {}".format(self.wheelhouse_path)
-            print "project_path is {}".format(project_path)
-            print "lambda_path is {}".format(self.lambda_path)
-            print "install_script_path is {}".format(install_script_path)
-            print "instal dir is {}".format(self.install_dir)
             wait_for_container_to_finish(container)
             LOG.warning("Install finished.")
             export_installed_dependencies(
