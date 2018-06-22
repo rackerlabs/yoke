@@ -2,6 +2,8 @@ from hashlib import sha1
 import logging
 import os
 import subprocess
+import tarfile
+from io import BytesIO
 from tempfile import mkstemp
 import time
 
@@ -76,6 +78,118 @@ def remove_container(container):
             "Could not remove container, please remove it manually (ID: %s)",
             container.short_id,
         )
+
+
+def create_volume_container(image='alpine:3.6', command='/bin/true', **kwargs):
+    docker_client = docker.from_env(version='auto')
+    docker_client.images.pull(image)
+    container = docker_client.containers.create(
+        image,
+        command,
+        **kwargs
+    )
+    return container
+
+
+def create_volume(name):
+    api = docker.from_env(version='auto')
+    return api.volumes.create(name)
+
+
+def put_files(container, src_dir, path, single_file_name=None):
+    stream = BytesIO()
+
+    with tarfile.open(fileobj=stream, mode='w') as tar:
+        if single_file_name:
+            arcname = single_file_name
+        else:
+            arcname = os.path.sep
+        tar.add(src_dir, arcname=arcname)
+    stream.seek(0)
+    container.put_archive(data=stream, path=path)
+
+
+def setup_dependency_volumes(
+                    docker_client=None,
+                    wheelhouse_path=None,
+                    project_path=None,
+                    lambda_path=None,
+                    install_script_path=None):
+    docker_client = docker.from_env(version='auto')
+    wheelhouse_volume = docker_client.volumes.create()
+    project_volume = docker_client.volumes.create()
+    lambda_volume = docker_client.volumes.create()
+    scripts_volume = docker_client.volumes.create()
+    volume_container = create_volume_container(
+                            volumes=[
+                             '{}:/wheelhouse'.format(wheelhouse_volume.name),
+                             '{}:/src'.format(project_volume.name),
+                             '{}:/lambda'.format(lambda_volume.name),
+                             '{}:/scripts'.format(scripts_volume.name)]
+    )
+    put_files(volume_container, wheelhouse_path, '/wheelhouse')
+    put_files(volume_container, project_path, '/src')
+    put_files(volume_container, lambda_path, '/lambda')
+    put_files(volume_container, install_script_path, '/scripts',
+              single_file_name='install_wheels.sh')
+    return volume_container
+
+
+def setup_build_volumes(
+                    docker_client=None,
+                    wheelhouse_path=None,
+                    lambda_path=None,
+                    install_script_path=None):
+    docker_client = docker.from_env(version='auto')
+    wheelhouse_volume = docker_client.volumes.create()
+    lambda_volume = docker_client.volumes.create()
+    scripts_volume = docker_client.volumes.create()
+    volume_container = create_volume_container(
+                            volumes=[
+                               '{}:/wheelhouse'.format(wheelhouse_volume.name),
+                               '{}:/src'.format(lambda_volume.name),
+                               '{}:/scripts'.format(scripts_volume.name)]
+    )
+    if os.path.isdir(wheelhouse_path):
+        put_files(volume_container, wheelhouse_path, '/wheelhouse')
+    else:
+        # wheelhouse path doesn't exist yet, so don't try to copy anything
+        LOG.warning(
+            "wheelhouse directory {} did not exist, so not copying.".format(
+                wheelhouse_path))
+        pass
+    put_files(volume_container, lambda_path, '/src')
+    put_files(volume_container, install_script_path, '/scripts',
+              single_file_name='build_wheels.sh')
+    return volume_container
+
+
+def export_installed_dependencies(container, src_path, dst_path):
+    # Copy installed dependencies from a container to a local directory.
+    stream = BytesIO()
+    tar_generator, _ = container.get_archive('/src/{}/.'.format(src_path))
+
+    for bytes in tar_generator:
+        stream.write(bytes)
+    else:
+        stream.seek(0)
+
+    with tarfile.open(fileobj=stream, mode='r') as tar:
+        tar.extractall(path=dst_path)
+
+
+def export_wheelhouse(container, dst_path):
+    # Copy installed dependencies from a container to a local directory.
+    stream = BytesIO()
+    tar_generator, _ = container.get_archive('/wheelhouse/.')
+
+    for bytes in tar_generator:
+        stream.write(bytes)
+    else:
+        stream.seek(0)
+
+    with tarfile.open(fileobj=stream, mode='r') as tar:
+        tar.extractall(path=dst_path)
 
 
 class PythonDependencyBuilder(object):
@@ -162,10 +276,15 @@ class PythonDependencyBuilder(object):
 
         # Build dependencies
         build_script_path = self.generate_build_script()
+        volume_container = setup_build_volumes(
+                    docker_client=client,
+                    wheelhouse_path=self.wheelhouse_path,
+                    lambda_path=self.lambda_path,
+                    install_script_path=build_script_path)
         try:
             container = client.containers.run(
                 image=BUILD_IMAGE,
-                command='/bin/bash -c "./build_wheels.sh"',
+                command='/bin/bash -c "/scripts/build_wheels.sh"',
                 detach=True,
                 environment={
                     'BUILD_OPENSSL': '1' if self.build_openssl else '0',
@@ -174,11 +293,7 @@ class PythonDependencyBuilder(object):
                     'EXTRA_PACKAGES': ' '.join(self.extra_packages),
                     'PY_VERSION': PYTHON_VERSION_MAP[self.runtime],
                 },
-                volumes={
-                    self.wheelhouse_path: {'bind': '/wheelhouse'},
-                    self.lambda_path: {'bind': '/src'},
-                    build_script_path: {'bind': '/build_wheels.sh'},
-                },
+                volumes_from=[volume_container.id],
             )
             LOG.warning(
                 "Build container started, waiting for completion (ID: %s)",
@@ -186,6 +301,7 @@ class PythonDependencyBuilder(object):
             )
             wait_for_container_to_finish(container)
             LOG.warning("Build finished.")
+            export_wheelhouse(container, self.wheelhouse_path)
             remove_container(container)
         finally:
             os.remove(build_script_path)
@@ -196,20 +312,21 @@ class PythonDependencyBuilder(object):
         install_script_path = self.generate_install_script()
         try:
             project_path = os.path.dirname(self.lambda_path)
+            volume_container = setup_dependency_volumes(
+                        docker_client=docker_client,
+                        wheelhouse_path=self.wheelhouse_path,
+                        project_path=project_path,
+                        lambda_path=self.lambda_path,
+                        install_script_path=install_script_path)
             container = docker_client.containers.run(
                 image=BUILD_IMAGE,
-                command='/bin/bash -c "./install_wheels.sh"',
+                command='/bin/bash -c "/scripts/install_wheels.sh"',
                 detach=True,
                 environment={
                     'INSTALL_DIR': self.install_dir,
                     'PY_VERSION': PYTHON_VERSION_MAP[self.runtime],
                 },
-                volumes={
-                    self.wheelhouse_path: {'bind': '/wheelhouse'},
-                    project_path: {'bind': '/src'},
-                    self.lambda_path: {'bind': '/lambda'},
-                    install_script_path: {'bind': '/install_wheels.sh'},
-                },
+                volumes_from=[volume_container.id]
             )
             LOG.warning(
                 "Install container started, waiting for completion (ID: %s)",
@@ -217,6 +334,10 @@ class PythonDependencyBuilder(object):
             )
             wait_for_container_to_finish(container)
             LOG.warning("Install finished.")
+            export_installed_dependencies(
+                container,
+                self.install_dir,
+                self.install_dir)
             remove_container(container)
         finally:
             os.remove(install_script_path)
