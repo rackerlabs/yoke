@@ -42,10 +42,9 @@ def wait_for_container_to_finish(container):
     if exit_code != 0:
         # Save logs for further inspection -- if we are on CircleCI, save the
         # file under the artifacts directory.
-        basepath = (
-            os.environ['CIRCLE_ARTIFACTS']
-            if 'CIRCLECI' in os.environ
-            else '.'
+        basepath = os.environ.get(
+            'CIRCLE_ARTIFACTS',  # CircleCI 1.0 only
+            '.'
         )
         log_filename = os.path.join(
             basepath,
