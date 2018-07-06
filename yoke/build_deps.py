@@ -340,7 +340,10 @@ class PythonDependencyBuilder(object):
             export_installed_dependencies(
                 container,
                 self.install_dir,
-                self.install_dir)
+                os.path.abspath(
+                    os.path.join(self.project_path, self.install_dir)
+                ),
+            )
             remove_container(container)
         finally:
             os.remove(install_script_path)
