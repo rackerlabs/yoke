@@ -1,4 +1,4 @@
-boto3==1.4.2
+boto3==1.7.50
 botocore==1.4.85
 docker==2.2.1
 Jinja2==2.8
