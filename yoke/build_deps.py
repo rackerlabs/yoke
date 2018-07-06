@@ -114,7 +114,9 @@ def setup_dependency_volumes(
                     project_path=None,
                     lambda_path=None,
                     install_script_path=None):
-    docker_client = docker.from_env(version='auto')
+    if docker_client is None:
+        docker_client = docker.from_env(version='auto')
+
     wheelhouse_volume = docker_client.volumes.create()
     project_volume = docker_client.volumes.create()
     lambda_volume = docker_client.volumes.create()
@@ -139,7 +141,9 @@ def setup_build_volumes(
                     wheelhouse_path=None,
                     lambda_path=None,
                     install_script_path=None):
-    docker_client = docker.from_env(version='auto')
+    if docker_client is None:
+        docker_client = docker.from_env(version='auto')
+
     wheelhouse_volume = docker_client.volumes.create()
     lambda_volume = docker_client.volumes.create()
     scripts_volume = docker_client.volumes.create()
