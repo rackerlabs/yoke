@@ -114,7 +114,10 @@ def setup_dependency_volumes(
                     project_path=None,
                     lambda_path=None,
                     install_script_path=None):
-    docker_client = docker.from_env(version='auto')
+    LOG.warning('Setting up dependency volumes...')
+    if docker_client is None:
+        docker_client = docker.from_env(version='auto')
+
     wheelhouse_volume = docker_client.volumes.create()
     project_volume = docker_client.volumes.create()
     lambda_volume = docker_client.volumes.create()
@@ -139,7 +142,9 @@ def setup_build_volumes(
                     wheelhouse_path=None,
                     lambda_path=None,
                     install_script_path=None):
-    docker_client = docker.from_env(version='auto')
+    if docker_client is None:
+        docker_client = docker.from_env(version='auto')
+
     wheelhouse_volume = docker_client.volumes.create()
     lambda_volume = docker_client.volumes.create()
     scripts_volume = docker_client.volumes.create()
@@ -165,20 +170,34 @@ def setup_build_volumes(
 
 def export_installed_dependencies(container, src_path, dst_path):
     # Copy installed dependencies from a container to a local directory.
+    LOG.warning(
+        'Exporting installed dependencies from container %s to host %s...',
+        src_path,
+        dst_path,
+    )
     stream = BytesIO()
     tar_generator, _ = container.get_archive('/src/{}/.'.format(src_path))
 
+    byte_count = 0
     for bytes in tar_generator:
+        byte_count += len(bytes)
         stream.write(bytes)
     else:
         stream.seek(0)
 
+    LOG.warning('Extracting tar stream for export...')
     with tarfile.open(fileobj=stream, mode='r') as tar:
         tar.extractall(path=dst_path)
+    LOG.warning('%s bytes of dependencies exported', byte_count)
 
 
 def export_wheelhouse(container, dst_path):
     # Copy installed dependencies from a container to a local directory.
+    LOG.warning(
+        'Exporting wheelhouse from container %s to %s...',
+        container.name,
+        dst_path,
+    )
     stream = BytesIO()
     tar_generator, _ = container.get_archive('/wheelhouse/.')
 
@@ -308,6 +327,7 @@ class PythonDependencyBuilder(object):
         self._install_dependencies(client)
 
     def _install_dependencies(self, docker_client):
+        LOG.warning('Installing dependencies...')
         install_script_path = self.generate_install_script()
         try:
             project_path = os.path.dirname(self.lambda_path)
@@ -317,6 +337,7 @@ class PythonDependencyBuilder(object):
                         project_path=project_path,
                         lambda_path=self.lambda_path,
                         install_script_path=install_script_path)
+            LOG.warning('Running wheel install container...')
             container = docker_client.containers.run(
                 image=BUILD_IMAGE,
                 command='/bin/bash -c "/scripts/install_wheels.sh"',
@@ -336,7 +357,10 @@ class PythonDependencyBuilder(object):
             export_installed_dependencies(
                 container,
                 self.install_dir,
-                self.install_dir)
+                os.path.abspath(
+                    os.path.join(self.project_path, self.install_dir)
+                ),
+            )
             remove_container(container)
         finally:
             os.remove(install_script_path)
