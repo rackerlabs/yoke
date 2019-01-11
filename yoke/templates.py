@@ -222,8 +222,8 @@ ${PYBIN}/pip install -U setuptools
 
 ${PYBIN}/pip wheel --no-binary :all: -w /wheelhouse -r /src/requirements.txt
 
-# Make sure we're using the latest version of auditwheel
-/opt/python/cp36-cp36m/bin/pip install -U auditwheel
+# Make sure we're using a STABLE version of auditwheel
+/opt/python/cp36-cp36m/bin/pip install auditwheel==1.9
 # We only want to repair platform wheels that were compiled - not universal
 # wheels.
 find /wheelhouse -type f \\
