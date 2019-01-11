@@ -109,11 +109,11 @@ def put_files(container, src_dir, path, single_file_name=None):
 
 
 def setup_dependency_volumes(
-                    docker_client=None,
-                    wheelhouse_path=None,
-                    project_path=None,
-                    lambda_path=None,
-                    install_script_path=None):
+        docker_client=None,
+        wheelhouse_path=None,
+        project_path=None,
+        lambda_path=None,
+        install_script_path=None):
     LOG.warning('Setting up dependency volumes...')
     if docker_client is None:
         docker_client = docker.from_env(version='auto')
@@ -123,11 +123,12 @@ def setup_dependency_volumes(
     lambda_volume = docker_client.volumes.create()
     scripts_volume = docker_client.volumes.create()
     volume_container = create_volume_container(
-                            volumes=[
-                             '{}:/wheelhouse'.format(wheelhouse_volume.name),
-                             '{}:/src'.format(project_volume.name),
-                             '{}:/lambda'.format(lambda_volume.name),
-                             '{}:/scripts'.format(scripts_volume.name)]
+        volumes=[
+            '{}:/wheelhouse'.format(wheelhouse_volume.name),
+            '{}:/src'.format(project_volume.name),
+            '{}:/lambda'.format(lambda_volume.name),
+            '{}:/scripts'.format(scripts_volume.name),
+        ]
     )
     put_files(volume_container, wheelhouse_path, '/wheelhouse')
     put_files(volume_container, project_path, '/src')
@@ -138,10 +139,10 @@ def setup_dependency_volumes(
 
 
 def setup_build_volumes(
-                    docker_client=None,
-                    wheelhouse_path=None,
-                    lambda_path=None,
-                    install_script_path=None):
+        docker_client=None,
+        wheelhouse_path=None,
+        lambda_path=None,
+        install_script_path=None):
     if docker_client is None:
         docker_client = docker.from_env(version='auto')
 
@@ -149,10 +150,11 @@ def setup_build_volumes(
     lambda_volume = docker_client.volumes.create()
     scripts_volume = docker_client.volumes.create()
     volume_container = create_volume_container(
-                            volumes=[
-                               '{}:/wheelhouse'.format(wheelhouse_volume.name),
-                               '{}:/src'.format(lambda_volume.name),
-                               '{}:/scripts'.format(scripts_volume.name)]
+        volumes=[
+            '{}:/wheelhouse'.format(wheelhouse_volume.name),
+            '{}:/src'.format(lambda_volume.name),
+            '{}:/scripts'.format(scripts_volume.name),
+        ]
     )
     if os.path.isdir(wheelhouse_path):
         put_files(volume_container, wheelhouse_path, '/wheelhouse')
@@ -295,10 +297,11 @@ class PythonDependencyBuilder(object):
         # Build dependencies
         build_script_path = self.generate_build_script()
         volume_container = setup_build_volumes(
-                    docker_client=client,
-                    wheelhouse_path=self.wheelhouse_path,
-                    lambda_path=self.lambda_path,
-                    install_script_path=build_script_path)
+            docker_client=client,
+            wheelhouse_path=self.wheelhouse_path,
+            lambda_path=self.lambda_path,
+            install_script_path=build_script_path,
+        )
         try:
             container = client.containers.run(
                 image=BUILD_IMAGE,
@@ -332,11 +335,12 @@ class PythonDependencyBuilder(object):
         try:
             project_path = os.path.dirname(self.lambda_path)
             volume_container = setup_dependency_volumes(
-                        docker_client=docker_client,
-                        wheelhouse_path=self.wheelhouse_path,
-                        project_path=project_path,
-                        lambda_path=self.lambda_path,
-                        install_script_path=install_script_path)
+                docker_client=docker_client,
+                wheelhouse_path=self.wheelhouse_path,
+                project_path=project_path,
+                lambda_path=self.lambda_path,
+                install_script_path=install_script_path,
+            )
             LOG.warning('Running wheel install container...')
             container = docker_client.containers.run(
                 image=BUILD_IMAGE,
