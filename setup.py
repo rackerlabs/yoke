@@ -54,7 +54,7 @@ setup(
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
     ],
-    license=license,
+    license=meta['license'],
     author="Rackers",
     maintainer_email="ryan.walker@rackspace.com",
     url=meta['url'],
