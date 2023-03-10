@@ -44,9 +44,10 @@ def build_dependencies(config):
     deployment.build_dependencies()
 
 
-def deploy_app(config):
+def deploy_app(config, skip_lambda=False):
     deployment = Deployment(config)
-    deployment.deploy_lambda()
+    if not skip_lambda:
+        deployment.deploy_lambda()
     if config.get('apiGateway'):
         deployment.deploy_api()
     LOG.warning('Deployment complete!')

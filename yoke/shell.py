@@ -23,7 +23,7 @@ def decrypt(args):
 
 
 def deploy_app(args):
-    deploy.deploy_app(args.config)
+    deploy.deploy_app(args.config, args.skip_lambda)
 
 
 def encrypt(args):
@@ -44,6 +44,9 @@ def main(arv=None):
     deploy_parser = subparsers.add_parser(
         'deploy',
         help='Deploy lambda and (optionally) API Gateway.')
+    deploy_parser.add_argument('--skip-lambda',
+                               help='Skip Lambda function update',
+                               action='store_true', default=False)
     deploy_parser.add_argument('--stage', dest='stage', help='Stage to deploy',
                                default=os.getenv('YOKE_STAGE'))
     deploy_parser.add_argument('--environment', '-e', dest='environment',
