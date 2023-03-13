@@ -109,6 +109,7 @@ class YokeConfig(object):
             aws_account_id = boto3.client('sts').get_caller_identity()[
                 'Account']
 
+        LOG.warning('AWS Account ID: %s', aws_account_id)
         return str(aws_account_id)
 
     def load_config_file(self):
