@@ -1,7 +1,7 @@
 boto3==1.7.50
 botocore==1.4.85
 docker==2.2.1
-Jinja2==2.8
+Jinja2==3.1.3
 jsonref==0.1
 lambda-uploader==1.2.1
 retrying==1.3.3
